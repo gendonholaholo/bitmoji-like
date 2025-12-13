@@ -251,14 +251,16 @@ class YouCamService:
         # Convert original image to base64
         original_b64 = base64.b64encode(image_content).decode("utf-8")
 
-        # Step 6: Generate dynamic analysis texts
-        from app.services.analysis_texts import generate_all_analysis_texts
+        # Step 6: Generate AI-powered analysis texts (no fallback for development)
+        from app.services.ai_analysis_service import ai_analysis_service
 
         analysis_texts = {}
         try:
-            analysis_texts = generate_all_analysis_texts(scores)
+            analysis_texts = await ai_analysis_service.generate_all_analyses(scores)
         except Exception as e:
-            print(f"Warning: Failed to generate analysis texts: {e}")
+            # No fallback - let error propagate for debugging
+            print(f"ERROR: Failed to generate AI analysis texts: {e}")
+            raise e
 
         return {
             "task_id": task_id,
