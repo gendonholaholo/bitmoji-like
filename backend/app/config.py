@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     youcam_secret_key: str | None = None  # Not used in v2 API
     youcam_base_url: str = "https://yce-api-01.makeupar.com/s2s/v2.0"
 
+    # OpenAI API Configuration (for AI-powered skin analysis)
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
+    ai_analysis_enabled: bool = True  # Toggle to enable/disable AI analysis
+
     # Application settings
     upload_dir: str = "/tmp/uploads"
     results_dir: str = "/tmp/results"

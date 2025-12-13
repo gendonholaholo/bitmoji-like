@@ -138,6 +138,79 @@
     font-size: 0.875rem;
 }
 
+/* Root Cause */
+.root-cause-content {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.root-cause-icon {
+    color: #a855f7;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.section-marker.root-cause {
+    color: #a855f7;
+}
+
+/* Lifestyle Tips */
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.tip-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgba(236, 72, 153, 0.1);
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+}
+
+.tip-icon {
+    color: #ec4899;
+    flex-shrink: 0;
+}
+
+.section-marker.lifestyle {
+    color: #ec4899;
+}
+
+/* Product Ingredients */
+.ingredients-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.ingredient-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.8rem;
+}
+
+.ingredient-icon {
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+
+.section-marker.ingredients {
+    color: #3b82f6;
+}
+
 /* Glass card override */
 .concern-detail .glass-card {
     background: rgba(255, 255, 255, 0.03);

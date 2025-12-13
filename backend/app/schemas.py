@@ -69,6 +69,17 @@ class SkinAnalysisScores(BaseModel):
     skin_age: int
 
 
+class AIAnalysisText(BaseModel):
+    """AI-generated analysis text for a specific concern"""
+
+    quantitative: str
+    precautions: str
+    recommendations: list[str]
+    root_cause: str
+    lifestyle_tips: list[str]
+    product_ingredients: list[str]
+
+
 class AnalysisResponse(BaseModel):
     """Response for skin analysis request"""
 
@@ -84,7 +95,9 @@ class ResultResponse(BaseModel):
     status: str
     scores: SkinAnalysisScores | None = None
     composite_image: str | None = None  # base64 encoded composite visualization
+    concern_overlays: dict[str, str] | None = None  # concern_name -> base64 encoded overlay
     masks: dict[str, str] | None = None  # mask_name -> base64 encoded image
     original_image: str | None = None  # base64 encoded original image
+    analysis_texts: dict[str, AIAnalysisText] | None = None  # AI-generated analysis texts
     error: str | None = None
     error_message: str | None = None

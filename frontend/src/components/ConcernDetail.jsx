@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Shield, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Shield, CheckCircle, Search, Heart, Beaker } from 'lucide-react';
 import SemiCircularGauge from './SemiCircularGauge';
 import ImageComparisonSlider from './ImageComparisonSlider';
 import './ConcernDetail.css';
@@ -58,6 +58,9 @@ const DEFAULT_ANALYSIS = {
     quantitative: 'Analisis kuantitatif tidak tersedia.',
     precautions: 'Informasi kewaspadaan tidak tersedia.',
     recommendations: [],
+    root_cause: 'Informasi penyebab tidak tersedia.',
+    lifestyle_tips: [],
+    product_ingredients: [],
 };
 
 export default function ConcernDetail({
@@ -161,6 +164,56 @@ export default function ConcernDetail({
                     </div>
                 )}
             </div>
+
+            {/* Root Cause */}
+            {analysis.root_cause && analysis.root_cause !== 'Analisis AI tidak tersedia.' && (
+                <div className="analysis-section glass-card">
+                    <h3 className="section-header">
+                        <span className="section-marker root-cause">|</span>
+                        Penyebab Utama
+                    </h3>
+                    <div className="root-cause-content">
+                        <Search size={20} className="root-cause-icon" />
+                        <p className="analysis-text">{analysis.root_cause}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Lifestyle Tips */}
+            {analysis.lifestyle_tips && analysis.lifestyle_tips.length > 0 && (
+                <div className="analysis-section glass-card">
+                    <h3 className="section-header">
+                        <span className="section-marker lifestyle">|</span>
+                        Tips Gaya Hidup
+                    </h3>
+                    <div className="tips-list">
+                        {analysis.lifestyle_tips.map((tip, index) => (
+                            <div key={index} className="tip-item">
+                                <Heart size={16} className="tip-icon" />
+                                <span>{tip}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Product Ingredients */}
+            {analysis.product_ingredients && analysis.product_ingredients.length > 0 && (
+                <div className="analysis-section glass-card">
+                    <h3 className="section-header">
+                        <span className="section-marker ingredients">|</span>
+                        Bahan Aktif yang Disarankan
+                    </h3>
+                    <div className="ingredients-list">
+                        {analysis.product_ingredients.map((ingredient, index) => (
+                            <div key={index} className="ingredient-item">
+                                <Beaker size={16} className="ingredient-icon" />
+                                <span>{ingredient}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
