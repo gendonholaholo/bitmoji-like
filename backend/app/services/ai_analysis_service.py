@@ -10,6 +10,7 @@ from app.config import settings
 
 class AIAnalysisResult(TypedDict):
     """Structure for AI-generated analysis"""
+
     quantitative: str
     precautions: str
     recommendations: list[str]
@@ -112,11 +113,7 @@ class AIAnalysisService:
         self.enabled = settings.ai_analysis_enabled and self.api_key is not None
         self.base_url = "https://api.openai.com/v1/chat/completions"
 
-    async def generate_analysis(
-        self,
-        concern_key: str,
-        scores: dict
-    ) -> AIAnalysisResult | None:
+    async def generate_analysis(self, concern_key: str, scores: dict) -> AIAnalysisResult | None:
         """
         Generate AI analysis for a specific concern.
 
@@ -138,17 +135,17 @@ class AIAnalysisService:
                     self.base_url,
                     headers={
                         "Authorization": f"Bearer {self.api_key}",
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
                     },
                     json={
                         "model": self.model,
                         "messages": [
                             {"role": "system", "content": SYSTEM_PROMPT},
-                            {"role": "user", "content": prompt}
+                            {"role": "user", "content": prompt},
                         ],
                         "temperature": 0.7,
-                        "response_format": {"type": "json_object"}
-                    }
+                        "response_format": {"type": "json_object"},
+                    },
                 )
 
                 if response.status_code != 200:
@@ -168,18 +165,14 @@ class AIAnalysisService:
                     "recommendations": analysis.get("recommendations", []),
                     "root_cause": analysis.get("root_cause", ""),
                     "lifestyle_tips": analysis.get("lifestyle_tips", []),
-                    "product_ingredients": analysis.get("product_ingredients", [])
+                    "product_ingredients": analysis.get("product_ingredients", []),
                 }
 
         except Exception as e:
             print(f"AI analysis error for {concern_key}: {e}")
             return None
 
-
-    async def generate_all_analyses(
-        self,
-        scores: dict
-    ) -> dict[str, AIAnalysisResult]:
+    async def generate_all_analyses(self, scores: dict) -> dict[str, AIAnalysisResult]:
         """
         Generate AI analyses for all available concerns.
         No fallback - returns raw results for development debugging.
@@ -197,7 +190,9 @@ class AIAnalysisService:
 
         if not self.enabled:
             # AI disabled - return empty dict (no fallback)
-            print("AI Analysis is disabled. Set AI_ANALYSIS_ENABLED=true and provide OPENAI_API_KEY.")
+            print(
+                "AI Analysis is disabled. Set AI_ANALYSIS_ENABLED=true and provide OPENAI_API_KEY."
+            )
             return results
 
         # Generate AI analyses in parallel

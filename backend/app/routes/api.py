@@ -89,11 +89,7 @@ async def get_result(task_id: str):
                     original_b64 = results_cache[task_id]["original_image"]
                     original_bytes = base64.b64decode(original_b64)
 
-                    composite_bytes = create_composite_visualization(
-                        original_bytes,
-                        masks,
-                        scores
-                    )
+                    composite_bytes = create_composite_visualization(original_bytes, masks, scores)
                     composite_b64 = base64.b64encode(composite_bytes).decode("utf-8")
                 except Exception as e:
                     print(f"Warning: Failed to create composite: {e}")

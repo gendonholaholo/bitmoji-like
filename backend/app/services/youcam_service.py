@@ -78,20 +78,20 @@ class YouCamService:
         # All 14 available actions from YouCam API v2.0 documentation
         # Mapped to Indonesian UI: Laporan Permukaan + Laporan Mendalam
         dst_actions = [
-            "acne",               # Jerawat
-            "dark_circle_v2",     # Lingkaran Hitam
+            "acne",  # Jerawat
+            "dark_circle_v2",  # Lingkaran Hitam
             "droopy_upper_eyelid",
-            "firmness",           # Serat Kolagen
-            "oiliness",           # Sebum
-            "radiance",           # Warna Kulit
-            "age_spot",           # Flek, Titik UV, Pigmen
-            "wrinkle",            # Keriput
-            "redness",            # Sensitivitas PL
-            "texture",            # Tekstur
-            "moisture",           # Kelembaban
-            "eye_bag",            # Kantung Mata
+            "firmness",  # Serat Kolagen
+            "oiliness",  # Sebum
+            "radiance",  # Warna Kulit
+            "age_spot",  # Flek, Titik UV, Pigmen
+            "wrinkle",  # Keriput
+            "redness",  # Sensitivitas PL
+            "texture",  # Tekstur
+            "moisture",  # Kelembaban
+            "eye_bag",  # Kantung Mata
             "droopy_lower_eyelid",
-            "pore",               # Pori-Pori, Komedo
+            "pore",  # Pori-Pori, Komedo
         ]
 
         payload = {
@@ -205,7 +205,7 @@ class YouCamService:
         if settings.bypass_youcam:
             print("[BYPASS MODE] Using mock data - no YouCam tokens consumed")
             return await self._analyze_with_mock_data(image_content)
-        
+
         # PRODUCTION MODE: Real YouCam API pipeline
         # Step 1: Upload file
         file_id = await self.upload_file(image_content, file_name, content_type)
@@ -228,11 +228,7 @@ class YouCamService:
         )
 
         try:
-            composite_bytes = create_composite_visualization(
-                image_content,
-                masks,
-                scores
-            )
+            composite_bytes = create_composite_visualization(image_content, masks, scores)
             composite_b64 = base64.b64encode(composite_bytes).decode("utf-8")
         except Exception as e:
             print(f"Warning: Failed to create composite: {e}")
@@ -260,7 +256,9 @@ class YouCamService:
                     name: base64.b64encode(content).decode("utf-8")
                     for name, content in concern_overlays.items()
                 }
-                landmark_statuses = {"_global": {"landmark_status": "failed", "fallback_used": True}}
+                landmark_statuses = {
+                    "_global": {"landmark_status": "failed", "fallback_used": True}
+                }
             except Exception as e2:
                 print(f"Warning: Fallback overlay creation also failed: {e2}")
 
@@ -298,49 +296,48 @@ class YouCamService:
     async def _analyze_with_mock_data(self, image_content: bytes) -> dict:
         """
         Bypass mode: Generate results using mock data instead of YouCam API.
-        
+
         Still processes the real image through:
         - MediaPipe (landmark detection)
         - GPT-4o-mini (AI analysis generation)
-        
+
         Args:
             image_content: Original uploaded image bytes
-            
+
         Returns:
             Same response structure as analyze_image (real mode)
         """
-        from app.services.mock_data import generate_mock_scores, generate_mock_masks
+        # Generate mock task_id
+        import uuid
+
         from app.services.image_processing import (
             create_all_concern_overlays,
             create_composite_visualization,
             create_landmark_enhanced_overlays,
         )
-        
-        # Generate mock task_id
-        import uuid
+        from app.services.mock_data import generate_mock_masks, generate_mock_scores
+
         task_id = f"mock_{uuid.uuid4().hex[:12]}"
-        
+
         print(f"[BYPASS MODE] Generated mock task_id: {task_id}")
-        
+
         # Step 1-4: SKIPPED (no API calls to YouCam)
         # Generate mock scores and masks instead
         scores = generate_mock_scores()
-        
+
         # Get image dimensions for mask generation
-        from PIL import Image
         import io
+
+        from PIL import Image
+
         img = Image.open(io.BytesIO(image_content))
         masks = generate_mock_masks(img.width, img.height)
-        
+
         print(f"[BYPASS MODE] Generated {len(masks)} mock masks")
-        
+
         # Step 5: Generate composite visualization (same as real mode)
         try:
-            composite_bytes = create_composite_visualization(
-                image_content,
-                masks,
-                scores
-            )
+            composite_bytes = create_composite_visualization(image_content, masks, scores)
             composite_b64 = base64.b64encode(composite_bytes).decode("utf-8")
         except Exception as e:
             print(f"[BYPASS MODE] Warning: Failed to create composite: {e}")
@@ -358,13 +355,16 @@ class YouCamService:
                 name: base64.b64encode(content).decode("utf-8")
                 for name, content in concern_overlays.items()
             }
-            print(f"[BYPASS MODE] MediaPipe SUCCESS - Generated {len(concern_overlays)} landmark-enhanced overlays")
+            print(
+                f"[BYPASS MODE] MediaPipe SUCCESS - Generated {len(concern_overlays)} landmark-enhanced overlays"
+            )
         except Exception as e:
             print(f"[BYPASS MODE] MediaPipe FAILED: {e}")
             print(f"[BYPASS MODE] Error type: {type(e).__name__}")
             import traceback
+
             print(f"[BYPASS MODE] Traceback:\n{traceback.format_exc()}")
-            
+
             # Fallback to simple overlays
             try:
                 concern_overlays = create_all_concern_overlays(image_content, masks)
@@ -372,7 +372,9 @@ class YouCamService:
                     name: base64.b64encode(content).decode("utf-8")
                     for name, content in concern_overlays.items()
                 }
-                landmark_statuses = {"_global": {"landmark_status": "failed", "fallback_used": True}}
+                landmark_statuses = {
+                    "_global": {"landmark_status": "failed", "fallback_used": True}
+                }
             except Exception as e2:
                 print(f"[BYPASS MODE] Fallback overlay creation also failed: {e2}")
 
@@ -396,6 +398,7 @@ class YouCamService:
             print(f"[BYPASS MODE] GPT-4o-mini FAILED: {e}")
             print(f"[BYPASS MODE] Error type: {type(e).__name__}")
             import traceback
+
             print(f"[BYPASS MODE] Traceback:\n{traceback.format_exc()}")
             # Re-raise for transparency (development mode expects errors to be visible)
             raise e
