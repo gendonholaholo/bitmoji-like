@@ -1,0 +1,178 @@
+.concern-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Image Section */
+.concern-image-section {
+    position: relative;
+}
+
+.concern-image-wrapper {
+    position: relative;
+}
+
+/* Legend overlay on image */
+.image-legend {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 5;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.legend-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+/* Score Section */
+.concern-score-section {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.section-header {
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-marker {
+    color: #00d4ff;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+/* Analysis Sections */
+.analysis-section {
+    padding: 1.25rem;
+}
+
+.analysis-text {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    text-align: justify;
+}
+
+/* Precaution */
+.precaution-content {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.precaution-icon {
+    color: #f59e0b;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Recommendations */
+.recommendations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.recommendation-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+}
+
+.rec-icon {
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+.no-recommendations {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+}
+
+.no-recommendations svg {
+    opacity: 0.5;
+}
+
+.no-recommendations p {
+    font-size: 0.875rem;
+}
+
+/* Glass card override */
+.concern-detail .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.4),
+        0 0 15px rgba(0, 212, 255, 0.08),
+        inset 0 0 20px rgba(255, 255, 255, 0.01);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .concern-detail {
+        gap: 1rem;
+    }
+
+    .analysis-section {
+        padding: 1rem;
+    }
+
+    .analysis-text {
+        font-size: 0.85rem;
+    }
+
+    .image-legend {
+        max-width: 50%;
+    }
+
+    .legend-item {
+        padding: 4px 8px;
+    }
+
+    .legend-label {
+        font-size: 0.6rem;
+    }
+}
