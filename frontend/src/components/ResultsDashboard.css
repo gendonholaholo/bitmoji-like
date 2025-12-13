@@ -78,73 +78,85 @@
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 }
 
-/* Composite Image Section */
-.composite-section {
-    margin-bottom: 2rem;
+/* ========================================
+   MAIN VISUAL: Large Composite Image
+   ======================================== */
+.main-visual {
     display: flex;
     justify-content: center;
+    margin: 2rem 0;
 }
 
-.composite-image {
-    max-width: 100%;
+.large-composite {
+    width: 100%;
+    max-width: 800px;
     height: auto;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease;
 }
 
-/* Concerns Grid */
-.concerns-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+.large-composite:hover {
+    transform: scale(1.02);
+}
+
+/* ========================================
+   MINI CONCERN CARDS (Top 3 Worst)
+   ======================================== */
+.mini-concerns {
+    display: flex;
+    justify-content: center;
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
 }
 
-.concern-card {
-    padding: 1.5rem;
+.mini-concern-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1rem 1.5rem;
+    min-width: 160px;
+    text-align: center;
     color: white;
     transition: transform 0.2s ease;
 }
 
-.concern-card:hover {
+.mini-concern-card:hover {
     transform: translateY(-2px);
 }
 
-.concern-header {
+.mini-concern-label {
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    justify-content: center;
+    opacity: 0.9;
 }
 
-.concern-icon {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.concern-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.concern-score {
+.mini-concern-score {
     font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
-.concern-score.score-excellent {
+.mini-concern-score.score-excellent {
     color: #10b981;
 }
 
-.concern-score.score-good {
+.mini-concern-score.score-good {
     color: #f59e0b;
 }
 
-.concern-score.score-attention {
+.mini-concern-score.score-attention {
     color: #ef4444;
 }
 
-.concern-bar-container {
+.mini-concern-bar-container {
     width: 100%;
     height: 6px;
     background: rgba(255, 255, 255, 0.2);
@@ -152,21 +164,21 @@
     overflow: hidden;
 }
 
-.concern-bar {
+.mini-concern-bar {
     height: 100%;
     transition: width 1s ease;
     border-radius: 3px;
 }
 
-.concern-bar.score-excellent {
+.mini-concern-bar.score-excellent {
     background: #10b981;
 }
 
-.concern-bar.score-good {
+.mini-concern-bar.score-good {
     background: #f59e0b;
 }
 
-.concern-bar.score-attention {
+.mini-concern-bar.score-attention {
     background: #ef4444;
 }
 
@@ -228,8 +240,19 @@
         font-size: 2.5rem;
     }
 
-    .concerns-grid {
-        grid-template-columns: 1fr;
+    .large-composite {
+        max-width: 100%;
+        border-radius: 16px;
+    }
+
+    .mini-concerns {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .mini-concern-card {
+        width: 100%;
+        max-width: 280px;
     }
 
     .guide-items {

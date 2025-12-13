@@ -16,36 +16,52 @@ export default function ResultsDashboard({ results }) {
         return 'score-attention';
     };
 
-    // Render a simple score card (for individual concerns)
-    const renderConcernCard = (label, scoreData) => {
-        if (!scoreData) return null;
+    // Get top 3 worst concerns (lowest scores)
+    const getTopWorstConcerns = () => {
+        const allConcerns = [
+            { name: 'Wrinkle', data: scores.wrinkle || scores.hd_wrinkle },
+            { name: 'Acne', data: scores.acne || scores.hd_acne },
+            { name: 'Pore', data: scores.pore || scores.hd_pore },
+            { name: 'Texture', data: scores.texture || scores.hd_texture },
+            { name: 'Age Spot', data: scores.age_spot || scores.hd_age_spot },
+            { name: 'Eye Bag', data: scores.eye_bag || scores.hd_eye_bag },
+            { name: 'Dark Circle', data: scores.dark_circle_v2 || scores.hd_dark_circle },
+            { name: 'Droopy Lower Eyelid', data: scores.droopy_lower_eyelid || scores.hd_droopy_lower_eyelid },
+            { name: 'Droopy Upper Eyelid', data: scores.droopy_upper_eyelid || scores.hd_droopy_upper_eyelid },
+            { name: 'Redness', data: scores.redness || scores.hd_redness },
+            { name: 'Oiliness', data: scores.oiliness || scores.hd_oiliness },
+            { name: 'Radiance', data: scores.radiance || scores.hd_radiance },
+            { name: 'Moisture', data: scores.moisture || scores.hd_moisture },
+            { name: 'Firmness', data: scores.firmness || scores.hd_firmness },
+        ];
 
-        const score = scoreData.ui_score || scoreData.score;
+        // Extract scores and filter valid ones
+        const concernsWithScores = allConcerns
+            .map(concern => {
+                let score = null;
 
-        return (
-            <div className="concern-card glass-card">
-                <div className="concern-header">
-                    <Activity size={20} className="concern-icon" />
-                    <span className="concern-label">{label}</span>
-                </div>
-                <div className={`concern-score ${getScoreColor(score)}`}>
-                    {Math.round(score)}
-                </div>
-                <div className="concern-bar-container">
-                    <div
-                        className={`concern-bar ${getScoreColor(score)}`}
-                        style={{ width: `${score}%` }}
-                    />
-                </div>
-            </div>
-        );
+                // Handle both simple scores and subcategory scores (whole)
+                if (concern.data) {
+                    if (concern.data.ui_score !== undefined) {
+                        score = concern.data.ui_score;
+                    } else if (concern.data.whole && concern.data.whole.ui_score !== undefined) {
+                        score = concern.data.whole.ui_score;
+                    } else if (concern.data.score !== undefined) {
+                        score = concern.data.score;
+                    }
+                }
+
+                return { ...concern, score };
+            })
+            .filter(c => c.score !== null);
+
+        // Sort by score (lowest first) and take top 3 worst
+        return concernsWithScores
+            .sort((a, b) => a.score - b.score)
+            .slice(0, 3);
     };
 
-    // Render subcategory (with whole score)
-    const renderSubcategoryConcern = (label, subcategoryData) => {
-        if (!subcategoryData || !subcategoryData.whole) return null;
-        return renderConcernCard(label, subcategoryData.whole);
-    };
+    const topWorstConcerns = getTopWorstConcerns();
 
     return (
         <div className="results-container">
@@ -75,28 +91,36 @@ export default function ResultsDashboard({ results }) {
                     </div>
                 </div>
 
-                {/* Composite visualization image */}
+                {/* MAIN FOCUS: Large composite visualization image */}
                 {composite_image && (
-                    <div className="composite-section">
+                    <div className="main-visual">
                         <img
                             src={`data:image/jpeg;base64,${composite_image}`}
                             alt="Skin Analysis Visualization"
-                            className="composite-image"
+                            className="large-composite"
                         />
                     </div>
                 )}
 
-                {/* Individual concern cards */}
-                <div className="concerns-grid">
-                    {/* Render all available concerns */}
-                    {renderSubcategoryConcern('Wrinkle', scores.wrinkle || scores.hd_wrinkle)}
-                    {renderSubcategoryConcern('Acne', scores.acne || scores.hd_acne)}
-                    {renderSubcategoryConcern('Pore', scores.pore || scores.hd_pore)}
-                    {renderSubcategoryConcern('Texture', scores.texture || scores.hd_texture)}
-                    {renderConcernCard('Age Spot', scores.age_spot || scores.hd_age_spot)}
-                    {renderConcernCard('Eye Bag', scores.eye_bag || scores.hd_eye_bag)}
-                    {renderConcernCard('Dark Circle', scores.dark_circle_v2 || scores.hd_dark_circle)}
-                    {renderConcernCard('Droopy Lower Eyelid', scores.droopy_lower_eyelid || scores.hd_droopy_lower_eyelid)}
+                {/* Top 3 worst concerns - mini cards */}
+                <div className="mini-concerns">
+                    {topWorstConcerns.map((concern, index) => (
+                        <div key={index} className="mini-concern-card glass-card">
+                            <div className="mini-concern-label">
+                                <Activity size={16} />
+                                <span>{concern.name}</span>
+                            </div>
+                            <div className={`mini-concern-score ${getScoreColor(concern.score)}`}>
+                                {Math.round(concern.score)}
+                            </div>
+                            <div className="mini-concern-bar-container">
+                                <div
+                                    className={`mini-concern-bar ${getScoreColor(concern.score)}`}
+                                    style={{ width: `${concern.score}%` }}
+                                />
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
                 {/* Score legend */}
