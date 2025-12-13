@@ -32,7 +32,6 @@ def generate_mock_scores() -> dict:
         "moisture": {"raw_score": 51.8, "ui_score": 51.8},
         "dark_circle_v2": {"raw_score": 48.3, "ui_score": 48.3},
         "eye_bag": {"raw_score": 70.1, "ui_score": 70.1},
-
         # Overall metrics
         "all": {"score": 78.0},
         "skin_age": 28,
@@ -52,23 +51,23 @@ def create_debug_mask(width: int, height: int, concern_name: str) -> bytes:
         PNG bytes of debug mask with simple patterns
     """
     # Create transparent image
-    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
     # Define colors for different concern types
     color_map = {
-        "acne": (255, 100, 100, 150),      # Red
-        "wrinkle": (200, 150, 255, 150),   # Purple
-        "pore": (100, 200, 255, 150),      # Cyan
+        "acne": (255, 100, 100, 150),  # Red
+        "wrinkle": (200, 150, 255, 150),  # Purple
+        "pore": (100, 200, 255, 150),  # Cyan
         "age_spot": (255, 200, 100, 150),  # Orange
         "oiliness": (255, 255, 100, 150),  # Yellow
         "radiance": (255, 200, 200, 150),  # Pink
-        "texture": (150, 255, 150, 150),   # Light green
-        "redness": (255, 50, 50, 150),     # Bright red
+        "texture": (150, 255, 150, 150),  # Light green
+        "redness": (255, 50, 50, 150),  # Bright red
         "firmness": (200, 200, 255, 150),  # Light blue
         "moisture": (100, 255, 255, 150),  # Aqua
         "dark_circle_v2": (150, 100, 200, 150),  # Dark purple
-        "eye_bag": (180, 150, 200, 150),   # Lavender
+        "eye_bag": (180, 150, 200, 150),  # Lavender
     }
 
     color = color_map.get(concern_name, (150, 150, 150, 150))
@@ -80,7 +79,7 @@ def create_debug_mask(width: int, height: int, concern_name: str) -> bytes:
         x = np.random.randint(0, width)
         y = np.random.randint(0, height)
         radius = np.random.randint(5, 15)
-        draw.ellipse([(x-radius, y-radius), (x+radius, y+radius)], fill=color)
+        draw.ellipse([(x - radius, y - radius), (x + radius, y + radius)], fill=color)
 
     # Pattern 2: Some lines (for wrinkles, texture, etc.)
     if concern_name in ["wrinkle", "texture", "firmness"]:
@@ -95,15 +94,14 @@ def create_debug_mask(width: int, height: int, concern_name: str) -> bytes:
         bbox = draw.textbbox((0, 0), label)
         label_width = bbox[2] - bbox[0] + 20
         label_height = bbox[3] - bbox[1] + 10
-        draw.rectangle([(10, 10), (10 + label_width, 10 + label_height)],
-                      fill=(0, 0, 0, 180))
+        draw.rectangle([(10, 10), (10 + label_width, 10 + label_height)], fill=(0, 0, 0, 180))
         draw.text((20, 15), label, fill=(255, 255, 255, 255))
     except Exception:
         pass  # Font rendering might fail in some environments
 
     # Convert to bytes
     buffer = io.BytesIO()
-    img.save(buffer, format='PNG')
+    img.save(buffer, format="PNG")
     return buffer.getvalue()
 
 
@@ -119,9 +117,18 @@ def generate_mock_masks(image_width: int = 640, image_height: int = 480) -> dict
         Dictionary mapping concern names to PNG mask bytes
     """
     concerns = [
-        "acne", "wrinkle", "pore", "age_spot", "oiliness",
-        "radiance", "texture", "redness", "firmness", "moisture",
-        "dark_circle_v2", "eye_bag"
+        "acne",
+        "wrinkle",
+        "pore",
+        "age_spot",
+        "oiliness",
+        "radiance",
+        "texture",
+        "redness",
+        "firmness",
+        "moisture",
+        "dark_circle_v2",
+        "eye_bag",
     ]
 
     masks = {}

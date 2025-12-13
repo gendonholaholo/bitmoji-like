@@ -17,6 +17,7 @@ from PIL import Image, ImageDraw
 
 class LandmarkStatus(str, Enum):
     """Status hasil deteksi landmark"""
+
     SUCCESS = "success"
     PARTIAL = "partial"  # Terdeteksi tapi confidence rendah
     FAILED = "failed"
@@ -25,6 +26,7 @@ class LandmarkStatus(str, Enum):
 @dataclass
 class LandmarkResult:
     """Hasil deteksi landmark"""
+
     status: LandmarkStatus
     error_message: str | None = None
     landmarks: np.ndarray | None = None  # Shape: (468, 3) - x, y, z
@@ -40,42 +42,242 @@ class LandmarkResult:
 FACIAL_ZONES = {
     # T-Zone (dahi + hidung) - area sebum/oiliness
     "t_zone": {
-        "forehead": [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288,
-                     397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136,
-                     172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109],
+        "forehead": [
+            10,
+            338,
+            297,
+            332,
+            284,
+            251,
+            389,
+            356,
+            454,
+            323,
+            361,
+            288,
+            397,
+            365,
+            379,
+            378,
+            400,
+            377,
+            152,
+            148,
+            176,
+            149,
+            150,
+            136,
+            172,
+            58,
+            132,
+            93,
+            234,
+            127,
+            162,
+            21,
+            54,
+            103,
+            67,
+            109,
+        ],
         "nose_bridge": [6, 197, 195, 5, 4, 1, 19, 94, 2, 164, 0, 267, 269, 270, 409, 291],
         "nose_tip": [1, 2, 98, 327, 326, 97, 99, 240, 235, 219, 218, 237, 44, 1],
     },
-
     # Pipi kiri
-    "left_cheek": [234, 93, 132, 58, 172, 136, 150, 149, 176, 148, 152, 377,
-                   400, 378, 379, 365, 397, 288, 361, 323, 454, 356, 389, 251,
-                   284, 332, 297, 338, 10, 109, 67, 103, 54, 21, 162, 127],
-
+    "left_cheek": [
+        234,
+        93,
+        132,
+        58,
+        172,
+        136,
+        150,
+        149,
+        176,
+        148,
+        152,
+        377,
+        400,
+        378,
+        379,
+        365,
+        397,
+        288,
+        361,
+        323,
+        454,
+        356,
+        389,
+        251,
+        284,
+        332,
+        297,
+        338,
+        10,
+        109,
+        67,
+        103,
+        54,
+        21,
+        162,
+        127,
+    ],
     # Pipi kanan
-    "right_cheek": [454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148,
-                   176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21,
-                   54, 103, 67, 109, 10, 338, 297, 332, 284, 251, 389, 356],
-
+    "right_cheek": [
+        454,
+        323,
+        361,
+        288,
+        397,
+        365,
+        379,
+        378,
+        400,
+        377,
+        152,
+        148,
+        176,
+        149,
+        150,
+        136,
+        172,
+        58,
+        132,
+        93,
+        234,
+        127,
+        162,
+        21,
+        54,
+        103,
+        67,
+        109,
+        10,
+        338,
+        297,
+        332,
+        284,
+        251,
+        389,
+        356,
+    ],
     # Area mata (untuk dark_circle, eye_bag)
     "left_eye_area": [226, 247, 30, 29, 27, 28, 56, 190, 243, 112, 26, 22, 23, 24, 110, 25],
-    "right_eye_area": [446, 467, 260, 259, 257, 258, 286, 414, 463, 341, 256, 252, 253, 254, 339, 255],
-
+    "right_eye_area": [
+        446,
+        467,
+        260,
+        259,
+        257,
+        258,
+        286,
+        414,
+        463,
+        341,
+        256,
+        252,
+        253,
+        254,
+        339,
+        255,
+    ],
     # Under-eye (lingkaran hitam)
-    "left_under_eye": [111, 117, 118, 119, 120, 121, 128, 245, 193, 168, 417, 351, 419, 248, 281, 363, 360, 279, 358, 429, 355, 463, 341, 256],
-    "right_under_eye": [340, 346, 347, 348, 349, 350, 357, 465, 412, 343, 277, 329, 330, 280, 352, 346],
-
+    "left_under_eye": [
+        111,
+        117,
+        118,
+        119,
+        120,
+        121,
+        128,
+        245,
+        193,
+        168,
+        417,
+        351,
+        419,
+        248,
+        281,
+        363,
+        360,
+        279,
+        358,
+        429,
+        355,
+        463,
+        341,
+        256,
+    ],
+    "right_under_eye": [
+        340,
+        346,
+        347,
+        348,
+        349,
+        350,
+        357,
+        465,
+        412,
+        343,
+        277,
+        329,
+        330,
+        280,
+        352,
+        346,
+    ],
     # Dahi (untuk wrinkle, texture)
     "forehead_center": [10, 151, 9, 8, 168, 6, 197, 195, 5, 4],
-
     # Nasolabial (lipatan hidung ke mulut)
     "left_nasolabial": [205, 50, 117, 118, 101, 36, 206, 203, 129, 102, 48, 115],
     "right_nasolabial": [425, 280, 346, 347, 330, 266, 426, 423, 358, 331, 278, 344],
-
     # Dagu
-    "chin": [152, 377, 400, 378, 379, 365, 397, 288, 435, 401, 366, 447,
-             264, 372, 383, 380, 381, 382, 362, 398, 312, 311, 310, 415,
-             308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78, 191, 80, 81, 82, 13, 312, 311, 310, 415],
+    "chin": [
+        152,
+        377,
+        400,
+        378,
+        379,
+        365,
+        397,
+        288,
+        435,
+        401,
+        366,
+        447,
+        264,
+        372,
+        383,
+        380,
+        381,
+        382,
+        362,
+        398,
+        312,
+        311,
+        310,
+        415,
+        308,
+        324,
+        318,
+        402,
+        317,
+        14,
+        87,
+        178,
+        88,
+        95,
+        78,
+        191,
+        80,
+        81,
+        82,
+        13,
+        312,
+        311,
+        310,
+        415,
+    ],
 }
 
 # Mapping concern ke zona yang relevan
@@ -83,7 +285,13 @@ CONCERN_ZONE_MAPPING = {
     "oiliness": ["t_zone"],
     "acne": ["t_zone", "left_cheek", "right_cheek", "chin"],
     "pore": ["t_zone", "left_cheek", "right_cheek"],
-    "wrinkle": ["forehead_center", "left_eye_area", "right_eye_area", "left_nasolabial", "right_nasolabial"],
+    "wrinkle": [
+        "forehead_center",
+        "left_eye_area",
+        "right_eye_area",
+        "left_nasolabial",
+        "right_nasolabial",
+    ],
     "dark_circle": ["left_under_eye", "right_under_eye"],
     "eye_bag": ["left_under_eye", "right_under_eye"],
     "age_spot": ["left_cheek", "right_cheek", "forehead_center"],
@@ -96,17 +304,17 @@ CONCERN_ZONE_MAPPING = {
 
 # Warna untuk setiap concern (RGB + Alpha)
 CONCERN_COLORS = {
-    "oiliness": (255, 204, 0),      # Kuning/Gold
-    "acne": (255, 59, 48),          # Merah
-    "pore": (255, 149, 0),          # Orange
-    "wrinkle": (0, 212, 255),       # Cyan
-    "dark_circle": (94, 92, 230),   # Biru
-    "eye_bag": (88, 86, 214),       # Indigo
-    "age_spot": (162, 132, 94),     # Coklat
-    "redness": (255, 100, 100),     # Merah muda
-    "firmness": (0, 255, 200),      # Teal
-    "radiance": (255, 255, 100),    # Kuning terang
-    "texture": (175, 82, 222),      # Ungu
+    "oiliness": (255, 204, 0),  # Kuning/Gold
+    "acne": (255, 59, 48),  # Merah
+    "pore": (255, 149, 0),  # Orange
+    "wrinkle": (0, 212, 255),  # Cyan
+    "dark_circle": (94, 92, 230),  # Biru
+    "eye_bag": (88, 86, 214),  # Indigo
+    "age_spot": (162, 132, 94),  # Coklat
+    "redness": (255, 100, 100),  # Merah muda
+    "firmness": (0, 255, 200),  # Teal
+    "radiance": (255, 255, 100),  # Kuning terang
+    "texture": (175, 82, 222),  # Ungu
 }
 
 
@@ -140,8 +348,7 @@ class LandmarkService:
 
             if image is None:
                 return LandmarkResult(
-                    status=LandmarkStatus.FAILED,
-                    error_message="Gagal decode image"
+                    status=LandmarkStatus.FAILED, error_message="Gagal decode image"
                 )
 
             # Convert BGR ke RGB untuk MediaPipe
@@ -151,44 +358,37 @@ class LandmarkService:
             # Process dengan MediaPipe
             results = self.face_mesh.process(image_rgb)
 
-
             if not results.multi_face_landmarks:
                 return LandmarkResult(
-                    status=LandmarkStatus.FAILED,
-                    error_message="Wajah tidak terdeteksi"
+                    status=LandmarkStatus.FAILED, error_message="Wajah tidak terdeteksi"
                 )
 
             # Ambil landmark pertama (face pertama)
             face_landmarks = results.multi_face_landmarks[0]
 
             # Convert ke numpy array dengan koordinat pixel
-            landmarks = np.array([
-                [lm.x * width, lm.y * height, lm.z * width]
-                for lm in face_landmarks.landmark
-            ])
+            landmarks = np.array(
+                [[lm.x * width, lm.y * height, lm.z * width] for lm in face_landmarks.landmark]
+            )
 
             # Hitung confidence (rata-rata visibility jika tersedia)
             confidence = 0.85  # Default confidence untuk static image
 
             return LandmarkResult(
-                status=LandmarkStatus.SUCCESS,
-                landmarks=landmarks,
-                confidence=confidence
+                status=LandmarkStatus.SUCCESS, landmarks=landmarks, confidence=confidence
             )
 
         except Exception as e:
             return LandmarkResult(
-                status=LandmarkStatus.FAILED,
-                error_message=f"Error deteksi landmark: {str(e)}"
+                status=LandmarkStatus.FAILED, error_message=f"Error deteksi landmark: {str(e)}"
             )
-
 
     def create_zone_visualization(
         self,
         image_bytes: bytes,
         concern_key: str,
         mask_bytes: bytes | None = None,
-        style: str = "canny"
+        style: str = "canny",
     ) -> tuple[bytes, dict]:
         """
         Buat visualisasi zona untuk concern tertentu
@@ -210,13 +410,12 @@ class LandmarkService:
             "landmark_error": landmark_result.error_message,
             "confidence": landmark_result.confidence,
             "fallback_used": False,
-            "visualization_source": "none"
+            "visualization_source": "none",
         }
 
         # Load original image
         original = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
         width, height = original.size
-
 
         if landmark_result.status == LandmarkStatus.FAILED:
             # Fallback: gunakan mask saja jika ada
@@ -255,7 +454,6 @@ class LandmarkService:
                     x, y = landmarks[idx][0], landmarks[idx][1]
                     points.append((int(x), int(y)))
 
-
             if len(points) < 3:
                 continue
 
@@ -266,10 +464,7 @@ class LandmarkService:
 
                 # Draw dots pada setiap landmark
                 for x, y in points:
-                    draw.ellipse(
-                        [(x - 2, y - 2), (x + 2, y + 2)],
-                        fill=(*color, 255)
-                    )
+                    draw.ellipse([(x - 2, y - 2), (x + 2, y + 2)], fill=(*color, 255))
             else:
                 # Filled style: polygon semi-transparan
                 draw.polygon(points, fill=(*color, 60), outline=(*color, 180))
@@ -286,7 +481,6 @@ class LandmarkService:
         result.convert("RGB").save(output, format="JPEG", quality=95)
 
         return output.getvalue(), status
-
 
     def _get_zone_indices(self, zone_name: str) -> list[int]:
         """Dapatkan landmark indices untuk zona tertentu"""
@@ -305,12 +499,7 @@ class LandmarkService:
                 return sub_zones
         return []
 
-    def _apply_mask_only(
-        self,
-        original: Image.Image,
-        mask_bytes: bytes,
-        concern_key: str
-    ) -> bytes:
+    def _apply_mask_only(self, original: Image.Image, mask_bytes: bytes, concern_key: str) -> bytes:
         """Fallback: apply mask tanpa landmark (enhanced visibility)"""
         width, height = original.size
         color = CONCERN_COLORS.get(concern_key, (0, 212, 255))
@@ -320,10 +509,9 @@ class LandmarkService:
         if mask_img.size != (width, height):
             mask_img = mask_img.resize((width, height), Image.Resampling.LANCZOS)
 
-
         # Convert to grayscale
-        if mask_img.mode != 'L':
-            mask_img = mask_img.convert('L')
+        if mask_img.mode != "L":
+            mask_img = mask_img.convert("L")
 
         # Create colored overlay dengan enhanced alpha
         overlay = Image.new("RGBA", (width, height), (*color, 0))
@@ -342,20 +530,15 @@ class LandmarkService:
         return output.getvalue()
 
     def _add_intensity_dots(
-        self,
-        overlay: Image.Image,
-        mask_bytes: bytes,
-        landmarks: np.ndarray,
-        color: tuple
+        self, overlay: Image.Image, mask_bytes: bytes, landmarks: np.ndarray, color: tuple
     ) -> Image.Image:
         """Tambahkan intensity dots berdasarkan mask"""
         draw = ImageDraw.Draw(overlay)
         width, height = overlay.size
 
-
         try:
             # Load mask
-            mask_img = Image.open(io.BytesIO(mask_bytes)).convert('L')
+            mask_img = Image.open(io.BytesIO(mask_bytes)).convert("L")
             if mask_img.size != (width, height):
                 mask_img = mask_img.resize((width, height), Image.Resampling.LANCZOS)
 
@@ -372,13 +555,12 @@ class LandmarkService:
                         alpha = min(255, intensity + 100)
                         draw.ellipse(
                             [(x - radius, y - radius), (x + radius, y + radius)],
-                            fill=(*color, alpha)
+                            fill=(*color, alpha),
                         )
         except Exception:
             pass  # Skip jika mask processing gagal
 
         return overlay
-
 
     def create_all_zone_visualizations(
         self,
@@ -409,10 +591,7 @@ class LandmarkService:
                     break
 
             viz_bytes, status = self.create_zone_visualization(
-                image_bytes,
-                concern_key,
-                mask_bytes=mask_bytes,
-                style="canny"
+                image_bytes, concern_key, mask_bytes=mask_bytes, style="canny"
             )
 
             visualizations[concern_key] = viz_bytes

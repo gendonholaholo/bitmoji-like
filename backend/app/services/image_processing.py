@@ -35,13 +35,13 @@ def create_composite_visualization(
 
     # Priority masks to overlay (in order of visibility)
     mask_priorities = [
-        ("acne", (255, 59, 48, 180)),      # Red - high visibility
-        ("pore", (255, 149, 0, 150)),      # Orange
-        ("wrinkle", (255, 204, 0, 140)),   # Yellow
+        ("acne", (255, 59, 48, 180)),  # Red - high visibility
+        ("pore", (255, 149, 0, 150)),  # Orange
+        ("wrinkle", (255, 204, 0, 140)),  # Yellow
         ("texture", (175, 82, 222, 130)),  # Purple
-        ("age_spot", (162, 132, 94, 150)), # Brown
-        ("eye_bag", (88, 86, 214, 140)),   # Indigo
-        ("dark_circle", (94, 92, 230, 140)), # Blue
+        ("age_spot", (162, 132, 94, 150)),  # Brown
+        ("eye_bag", (88, 86, 214, 140)),  # Indigo
+        ("dark_circle", (94, 92, 230, 140)),  # Blue
     ]
 
     # Apply each mask with appropriate color
@@ -59,12 +59,12 @@ def create_composite_visualization(
                     mask_img = mask_img.resize((width, height), Image.Resampling.LANCZOS)
 
                 # Convert to grayscale to use as intensity map
-                if mask_img.mode != 'L':
-                    if mask_img.mode == 'RGBA':
+                if mask_img.mode != "L":
+                    if mask_img.mode == "RGBA":
                         # Use alpha channel if available
                         mask_intensity = mask_img.split()[3]
                     else:
-                        mask_intensity = mask_img.convert('L')
+                        mask_intensity = mask_img.convert("L")
                 else:
                     mask_intensity = mask_img
 
@@ -131,18 +131,18 @@ def create_simple_composite(
 
 # Color configuration for each concern type
 CONCERN_COLORS = {
-    "acne": (255, 59, 48, 180),       # Red
-    "pore": (255, 149, 0, 160),       # Orange
-    "wrinkle": (0, 212, 255, 150),    # Cyan
-    "texture": (175, 82, 222, 140),   # Purple
-    "age_spot": (255, 204, 0, 160),   # Yellow/Gold
-    "eye_bag": (88, 86, 214, 150),    # Indigo
-    "dark_circle": (94, 92, 230, 150), # Blue
-    "oiliness": (255, 215, 0, 140),   # Gold
+    "acne": (255, 59, 48, 180),  # Red
+    "pore": (255, 149, 0, 160),  # Orange
+    "wrinkle": (0, 212, 255, 150),  # Cyan
+    "texture": (175, 82, 222, 140),  # Purple
+    "age_spot": (255, 204, 0, 160),  # Yellow/Gold
+    "eye_bag": (88, 86, 214, 150),  # Indigo
+    "dark_circle": (94, 92, 230, 150),  # Blue
+    "oiliness": (255, 215, 0, 140),  # Gold
     "redness": (255, 100, 100, 160),  # Light red
-    "firmness": (0, 255, 200, 130),   # Teal
-    "radiance": (255, 255, 100, 130), # Light yellow
-    "moisture": (100, 200, 255, 130), # Light blue
+    "firmness": (0, 255, 200, 130),  # Teal
+    "radiance": (255, 255, 100, 130),  # Light yellow
+    "moisture": (100, 200, 255, 130),  # Light blue
 }
 
 
@@ -173,10 +173,7 @@ def create_concern_overlay(
     overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
 
     # Find matching mask files for this concern
-    matching_masks = [
-        name for name in masks.keys()
-        if concern_key.lower() in name.lower()
-    ]
+    matching_masks = [name for name in masks.keys() if concern_key.lower() in name.lower()]
 
     for mask_name in matching_masks:
         try:
@@ -188,11 +185,11 @@ def create_concern_overlay(
                 mask_img = mask_img.resize((width, height), Image.Resampling.LANCZOS)
 
             # Convert to grayscale for intensity
-            if mask_img.mode != 'L':
-                if mask_img.mode == 'RGBA':
+            if mask_img.mode != "L":
+                if mask_img.mode == "RGBA":
                     mask_intensity = mask_img.split()[3]
                 else:
-                    mask_intensity = mask_img.convert('L')
+                    mask_intensity = mask_img.convert("L")
             else:
                 mask_intensity = mask_img
 
@@ -241,16 +238,21 @@ def create_all_concern_overlays(
 
     # List of concerns to generate overlays for
     concerns = [
-        "acne", "pore", "wrinkle", "age_spot",
-        "dark_circle", "oiliness", "redness",
-        "firmness", "radiance", "texture"
+        "acne",
+        "pore",
+        "wrinkle",
+        "age_spot",
+        "dark_circle",
+        "oiliness",
+        "redness",
+        "firmness",
+        "radiance",
+        "texture",
     ]
 
     for concern in concerns:
         try:
-            overlay_bytes = create_concern_overlay(
-                original_image_bytes, masks, concern
-            )
+            overlay_bytes = create_concern_overlay(original_image_bytes, masks, concern)
             result[concern] = overlay_bytes
         except Exception as e:
             print(f"Warning: Failed to create overlay for {concern}: {e}")
@@ -258,11 +260,11 @@ def create_all_concern_overlays(
     return result
 
 
-
 # ============================================================================
 # LANDMARK-ENHANCED VISUALIZATION
 # Menggunakan MediaPipe untuk visualisasi canny-style yang lebih kaya
 # ============================================================================
+
 
 def create_landmark_enhanced_overlays(
     original_image_bytes: bytes,
