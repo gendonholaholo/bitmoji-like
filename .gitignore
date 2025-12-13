@@ -90,6 +90,7 @@ uploads/
 *.jpg
 *.png
 output.*
+**/openapi.json
 
 # Allow documentation assets
 !assets/

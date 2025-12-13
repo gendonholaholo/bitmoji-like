@@ -1,89 +1,142 @@
-# Bitmoji-like Skin Analysis
+# AI Skin Analysis - YouCam
 
-**Bitmoji-like Skin Analysis** adalah demo aplikasi web canggih yang dirancang untuk memberikan pengalaman analisis kulit tingkat profesional secara real-time. Aplikasi ini menyimulasikan pengalaman "Live Camera" untuk mendeteksi berbagai kondisi kulit menggunakan kecerdasan buatan, memberikan wawasan dermatologis instan yang dipresentasikan dalam antarmuka yang modern dan futuristik.
+**AI Skin Analysis** adalah aplikasi web canggih yang memberikan analisis kulit komprehensif menggunakan kecerdasan buatan. Aplikasi ini mengintegrasikan teknologi computer vision dengan AI untuk mendeteksi dan menganalisis berbagai kondisi kulit secara mendalam, menyajikan hasil dalam tiga kategori laporan yang terstruktur.
 
 ## Tinjauan Proyek
 
-Proyek ini dikembangkan sebagai demonstrasi kemampuan **Fullstack Development** dan **Advanced Computer Vision Engineering**. Fokus utama adalah menciptakan pengalaman pengguna yang seamless, di mana pengguna dapat "mengambil selfie" dan mendapatkan hasil analisis mendalam dalam hitungan detik.
+Proyek ini dikembangkan sebagai demonstrasi kemampuan **Fullstack Development** dan **Advanced Computer Vision Engineering**. Pembaruan besar ini menghadirkan sistem analisis kulit yang lebih komprehensif dengan tiga jenis laporan terpisah dan fitur perbandingan visual interaktif.
+
+### Evolusi Arsitektur (v1 → v2)
+
+Aplikasi ini telah mengalami transformasi signifikan dari pendekatan awal:
+
+| Aspek | v1 (Archived) | v2 (Current) |
+|-------|---------------|--------------|
+| **Visualisasi** | Single overlay map dengan color coding | Comparison slider interaktif per parameter |
+| **Laporan** | Dashboard tunggal | 3 laporan terstruktur (Umum, Permukaan, Mendalam) |
+| **AI Engine** | Basic image processing | MediaPipe + GPT Integration |
+| **Metrik** | 7 parameter dasar | 13+ parameter komprehensif |
+| **UX** | Static result display | Interactive gauge & slider |
+
+> **Catatan**: Screenshot dan dokumentasi pendekatan v1 diarsipkan di folder `assets/artefacts/` untuk referensi historis. Aplikasi saat ini menggunakan arsitektur v2 yang sepenuhnya berbeda.
 
 ### Demonstrasi Keahlian (Developer Capabilities)
 
 Saya (**Ghaws Shafadonia**) mengembangkan solusi ini untuk membuktikan kompetensi dalam ranah high-level engineering:
 
-*   **Fullstack Architecture Mastery**: Membangun jembatan yang kokoh antara backend yang kompleks (pemrosesan data AI) dan frontend yang responsif.
-*   **Computer Vision & AI Engineering**: Membangun pipeline pemrosesan citra biometrik yang kompleks, memproses data visual mentah menjadi wawasan dermatologis yang presisi.
-*   **Advanced UI/UX Implementation**: Menerjemahkan kebutuhan data yang rumit menjadi dashboard visual yang estetik (Futuristic Dark Theme) dan mudah dibaca, membuktikan kemampuan dalam menciptakan produk digital berstandar industri.
-*   **Complex State Management**: Menangani flow asinkronus real-time (scanning, processing, analyzing) untuk memberikan feedback instan kepada pengguna tanpa lag.
+*   **Fullstack Architecture Mastery**: Membangun jembatan yang kokoh antara backend yang kompleks (pemrosesan data AI, MediaPipe, GPT integration) dan frontend yang responsif.
+*   **Computer Vision & AI Engineering**: Mengintegrasikan MediaPipe untuk landmark detection dan GPT untuk analisis cerdas, memproses data visual mentah menjadi wawasan dermatologis yang presisi.
+*   **Advanced UI/UX Implementation**: Menerjemahkan kebutuhan data yang rumit menjadi dashboard visual yang estetik dengan comparison slider interaktif dan gauge visualization.
+*   **Complex State Management**: Menangani flow asinkronus real-time dengan progress tracking untuk memberikan feedback instan kepada pengguna.
 
 ## Fitur Utama
 
-- **Instant Selfie Capture**: Antarmuka pengambilan gambar intuitif yang mensimulasikan pengalaman cermin pintar.
-- **Analisis Kulit AI Komprehensif**: Mendeteksi 14+ parameter kulit termasuk jerawat, pori-pori, kerutan, dan tekstur secara presisi.
-- **Visualisasi Hasil Professional**: Dashboard interaktif yang memecah data kompleks menjadi skor yang mudah dipahami.
-- **Deteksi Wajah Presisi**: Algoritma cerdas yang memetakan kontur wajah untuk analisis area spesifik.
+- **Analisis Kulit AI Komprehensif**: Mendeteksi 13+ parameter kulit dengan presisi tinggi
+- **Tiga Jenis Laporan Terstruktur**:
+  - **Laporan Umum**: Skor keseluruhan dan estimasi usia kulit
+  - **Laporan Permukaan**: Analisis 8 parameter kulit permukaan
+  - **Laporan Mendalam**: Analisis 5 parameter kondisi kulit dalam
+- **Interactive Comparison Slider**: Bandingkan gambar original dengan hasil analisis secara real-time
+- **Semi-Circular Gauge Visualization**: Visualisasi skor yang intuitif dan mudah dipahami
+- **Lokalisasi Bahasa Indonesia**: Antarmuka sepenuhnya dalam Bahasa Indonesia
 
 ## Galeri Demonstrasi
 
 Berikut adalah tampilan antarmuka aplikasi yang telah dikembangkan:
 
-### 1. Antarmuka Pengambilan Selfie (Smart Mirror UI)
+### 1. Antarmuka Pengambilan Selfie
 
 | Selfie Capture Mode |
 | :---: |
 | ![Selfie Interface](assets/gos-input.png) |
 
-*Antarmuka "Take a Selfie" dengan desain futuristik, siap untuk memindai wajah pengguna secara real-time.*
+*Antarmuka "Take a Selfie" dengan desain futuristik, siap untuk memindai wajah pengguna.*
 
-### 2. Proses Pemindaian Cerdas
+### 2. Proses Analisis AI
 
-| AI Scanning Process |
+| AI Analysis Process |
 | :---: |
-| ![Scanning](assets/processing.jpeg) |
+| ![Analysis Process](assets/analysis-process.jpeg) |
 
-*Visualisasi pemrosesan AI memberikan umpan balik langsung saat sistem menganalisis struktur wajah.*
+*Visualisasi proses analisis AI dengan progress tracking real-time. Sistem memproses hingga 720 frame untuk hasil yang akurat.*
 
-### 3. Dashboard Hasil Analisis
+### 3. Laporan Umum (General Report)
 
-| Comprehensive Result |
+| Comprehensive Overview |
 | :---: |
-| ![Analysis Dashboard](assets/results.jpeg) |
+| ![Laporan Umum](assets/laporan-umum.jpeg) |
 
-*Tampilan hasil yang compact dan profesional, menonjolkan skor kesehatan kulit dan area yang perlu perhatian khusus tanpa membingungkan pengguna.*
+*Dashboard Laporan Umum menampilkan Skor Kulit Keseluruhan dan Estimasi Usia Kulit. Dilengkapi dengan comparison slider untuk membandingkan gambar original dengan hasil analisis.*
 
-### 4. Visualisasi Pemetaan Wajah
+### 4. Laporan Permukaan (Surface Analysis)
 
-| Face Mapping Visualization |
+| Surface Skin Analysis |
 | :---: |
-| ![Face Map](assets/gos-output.jpg) |
+| ![Laporan Permukaan](assets/laporan-permukaan.jpeg) |
 
-*Overlay visual yang memetakan masalah kulit secara spesifik pada wajah pengguna, menunjukkan presisi deteksi AI.*
+*Laporan Permukaan menganalisis 8 parameter kulit: Sebum, Pori-Pori, Flek, Keriput, Jerawat, Komedo, Warna Kulit, dan Lingkaran Hitam. Setiap parameter memiliki visualisasi overlay dan gauge score tersendiri.*
 
-#### Legenda Peta Visual (Visual Map Legend)
+### 5. Laporan Mendalam (Deep Analysis)
 
-Setiap warna pada overlay merepresentasikan deteksi kondisi kulit spesifik:
+| Deep Skin Analysis |
+| :---: |
+| ![Laporan Mendalam](assets/laporan-mendalam.jpeg) |
 
-| Warna Visual | Kondisi Terdeteksi (Detected Concern) | Deskripsi |
-| :--- | :--- | :--- |
-| 🔴 **Merah** | **Acne** (Jerawat) | Mendeteksi area infl amasi dan jerawat aktif |
-| 🟠 **Oranye** | **Pore** (Pori-pori) | Menandai area dengan pori-pori yang terlihat membesar |
-| 🟡 **Kuning** | **Wrinkle** (Kerutan) | Mengidentifikasi garis halus dan kerutan dalam |
-| 🟣 **Ungu** | **Texture** (Tekstur) | Menunjukkan ketidakrataan permukaan kulit |
-| 🟤 **Coklat** | **Age Spot** (Flek) | Menandai hiperpigmentasi dan bintik penuaan |
-| 🔵 **Indigo** | **Eye Bag** (Kantung Mata) | Mendeteksi pembengkakan di bawah mata |
-| 🔵 **Biru** | **Dark Circle** (Lingkaran Hitam) | Mengidentifikasi pigmentasi gelap di area mata |
+*Laporan Mendalam menganalisis kondisi kulit di bawah permukaan: Sensitivitas PL, Titik UV, Pigmen, Jerawat UV, dan Serat Kolagen. Dilengkapi dengan indikator status kesehatan (Elastisitas baik, Penurunan ringan, Perlu perhatian).*
 
 ---
 
 ## Skin Analysis Metrics
 
-Sistem ini mampu mendeteksi dan menganalisis metrik kulit secara mendetail:
+Sistem ini mampu mendeteksi dan menganalisis metrik kulit secara mendetail dalam tiga kategori:
 
-| Kategori | Parameter Deteksi |
-|----------|-------------------|
-| **Kondisi Umum** | Jerawat, Pori-pori, Tekstur Kulit |
-| **Tanda Penuaan** | Kerutan, Garis Halus, Flek Usia |
-| **Area Mata** | Lingkaran Hitam, Kantung Mata, Kelopak Mata Turun |
-| **Kesehatan** | Kemerahan, Kadar Minyak, Kelembaban, Kekencangan |
+### Laporan Umum
+| Metrik | Deskripsi |
+|--------|-----------|
+| **Skor Kulit Keseluruhan** | Nilai agregat kesehatan kulit (0-100) |
+| **Usia Kulit** | Estimasi usia biologis kulit berdasarkan analisis |
+| **Indeks Kulit Permukaan** | Indikator kondisi kulit lapisan luar |
+| **Indeks Kulit Mendalam** | Indikator kondisi kulit lapisan dalam |
+
+### Laporan Permukaan
+| Parameter | Deskripsi |
+|-----------|-----------|
+| **Sebum** | Tingkat produksi minyak pada wajah |
+| **Pori-Pori** | Ukuran dan visibilitas pori-pori |
+| **Flek** | Bintik-bintik hiperpigmentasi |
+| **Keriput** | Garis halus dan kerutan |
+| **Jerawat** | Area inflamasi dan jerawat aktif |
+| **Komedo** | Pori-pori tersumbat (blackhead/whitehead) |
+| **Warna Kulit** | Keseragaman tone kulit |
+| **Lingkaran Hitam** | Pigmentasi gelap di area mata |
+
+### Laporan Mendalam
+| Parameter | Deskripsi |
+|-----------|-----------|
+| **Sensitivitas PL** | Tingkat sensitivitas kulit terhadap cahaya |
+| **Titik UV** | Kerusakan akibat paparan sinar UV |
+| **Pigmen** | Distribusi melanin di bawah permukaan |
+| **Jerawat UV** | Potensi jerawat dari kerusakan UV |
+| **Serat Kolagen** | Kondisi dan elastisitas serat kolagen |
+
+#### Indikator Status Kesehatan Kulit
+
+| Status | Indikator | Deskripsi |
+| :--- | :--- | :--- |
+| **Baik** | Hijau | Elastisitas dan kondisi kulit optimal |
+| **Sedang** | Kuning | Penurunan ringan, perlu perawatan preventif |
+| **Perlu Perhatian** | Merah | Memerlukan perhatian dan perawatan khusus |
+
+---
+
+## Tech Stack
+
+| Layer | Teknologi |
+|-------|-----------|
+| **Frontend** | React.js, CSS3, Vite |
+| **Backend** | Python, FastAPI |
+| **AI/ML** | MediaPipe, GPT Integration |
+| **Containerization** | Docker, Docker Compose |
 
 ## Informasi Pengembang
 
