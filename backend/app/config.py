@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     ai_analysis_enabled: bool = True  # Toggle to enable/disable AI analysis
 
+    # Development settings
+    bypass_youcam: bool = False  # Bypass YouCam API for development (uses mock data)
+
     # Application settings
     upload_dir: str = "/tmp/uploads"
     results_dir: str = "/tmp/results"
