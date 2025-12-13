@@ -201,6 +201,12 @@ class YouCamService:
         Returns:
             Dict with scores, composite_image, masks (base64), and task_id
         """
+        # BYPASS MODE: Use mock data for development without consuming YouCam tokens
+        if settings.bypass_youcam:
+            print("[BYPASS MODE] Using mock data - no YouCam tokens consumed")
+            return await self._analyze_with_mock_data(image_content)
+        
+        # PRODUCTION MODE: Real YouCam API pipeline
         # Step 1: Upload file
         file_id = await self.upload_file(image_content, file_name, content_type)
 
@@ -287,6 +293,123 @@ class YouCamService:
             "original_image": original_b64,
             "analysis_texts": analysis_texts,  # Dynamic Indonesian analysis texts
             "landmark_statuses": landmark_statuses,  # Status deteksi landmark per concern
+        }
+
+    async def _analyze_with_mock_data(self, image_content: bytes) -> dict:
+        """
+        Bypass mode: Generate results using mock data instead of YouCam API.
+        
+        Still processes the real image through:
+        - MediaPipe (landmark detection)
+        - GPT-4o-mini (AI analysis generation)
+        
+        Args:
+            image_content: Original uploaded image bytes
+            
+        Returns:
+            Same response structure as analyze_image (real mode)
+        """
+        from app.services.mock_data import generate_mock_scores, generate_mock_masks
+        from app.services.image_processing import (
+            create_all_concern_overlays,
+            create_composite_visualization,
+            create_landmark_enhanced_overlays,
+        )
+        
+        # Generate mock task_id
+        import uuid
+        task_id = f"mock_{uuid.uuid4().hex[:12]}"
+        
+        print(f"[BYPASS MODE] Generated mock task_id: {task_id}")
+        
+        # Step 1-4: SKIPPED (no API calls to YouCam)
+        # Generate mock scores and masks instead
+        scores = generate_mock_scores()
+        
+        # Get image dimensions for mask generation
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(image_content))
+        masks = generate_mock_masks(img.width, img.height)
+        
+        print(f"[BYPASS MODE] Generated {len(masks)} mock masks")
+        
+        # Step 5: Generate composite visualization (same as real mode)
+        try:
+            composite_bytes = create_composite_visualization(
+                image_content,
+                masks,
+                scores
+            )
+            composite_b64 = base64.b64encode(composite_bytes).decode("utf-8")
+        except Exception as e:
+            print(f"[BYPASS MODE] Warning: Failed to create composite: {e}")
+            composite_b64 = base64.b64encode(image_content).decode("utf-8")
+
+        # Step 5b: Generate per-concern overlays with MediaPipe landmark enhancement
+        concern_overlays_b64 = {}
+        landmark_statuses = {}
+        try:
+            print("[BYPASS MODE] Attempting MediaPipe landmark detection...")
+            concern_overlays, landmark_statuses = create_landmark_enhanced_overlays(
+                image_content, masks
+            )
+            concern_overlays_b64 = {
+                name: base64.b64encode(content).decode("utf-8")
+                for name, content in concern_overlays.items()
+            }
+            print(f"[BYPASS MODE] MediaPipe SUCCESS - Generated {len(concern_overlays)} landmark-enhanced overlays")
+        except Exception as e:
+            print(f"[BYPASS MODE] MediaPipe FAILED: {e}")
+            print(f"[BYPASS MODE] Error type: {type(e).__name__}")
+            import traceback
+            print(f"[BYPASS MODE] Traceback:\n{traceback.format_exc()}")
+            
+            # Fallback to simple overlays
+            try:
+                concern_overlays = create_all_concern_overlays(image_content, masks)
+                concern_overlays_b64 = {
+                    name: base64.b64encode(content).decode("utf-8")
+                    for name, content in concern_overlays.items()
+                }
+                landmark_statuses = {"_global": {"landmark_status": "failed", "fallback_used": True}}
+            except Exception as e2:
+                print(f"[BYPASS MODE] Fallback overlay creation also failed: {e2}")
+
+        # Convert masks to base64
+        masks_b64 = {
+            name: base64.b64encode(content).decode("utf-8") for name, content in masks.items()
+        }
+
+        # Convert original image to base64
+        original_b64 = base64.b64encode(image_content).decode("utf-8")
+
+        # Step 6: Generate AI-powered analysis (same as real mode, uses mock scores)
+        from app.services.ai_analysis_service import ai_analysis_service
+
+        analysis_texts = {}
+        try:
+            print("[BYPASS MODE] Attempting GPT-4o-mini AI analysis...")
+            analysis_texts = await ai_analysis_service.generate_all_analyses(scores)
+            print(f"[BYPASS MODE] GPT-4o-mini SUCCESS - Generated {len(analysis_texts)} analyses")
+        except Exception as e:
+            print(f"[BYPASS MODE] GPT-4o-mini FAILED: {e}")
+            print(f"[BYPASS MODE] Error type: {type(e).__name__}")
+            import traceback
+            print(f"[BYPASS MODE] Traceback:\n{traceback.format_exc()}")
+            # Re-raise for transparency (development mode expects errors to be visible)
+            raise e
+
+        return {
+            "task_id": task_id,
+            "status": "completed",
+            "scores": scores,
+            "composite_image": composite_b64,
+            "concern_overlays": concern_overlays_b64,
+            "masks": masks_b64,
+            "original_image": original_b64,
+            "analysis_texts": analysis_texts,
+            "landmark_statuses": landmark_statuses,
         }
 
 

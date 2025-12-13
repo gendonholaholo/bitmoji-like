@@ -1,7 +1,7 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
-from app.schemas import AnalysisResponse, ResultResponse
+from app.schemas import ResultResponse
 from app.services.youcam_service import youcam_service
 
 router = APIRouter(prefix="/api", tags=["skin-analysis"])
@@ -10,12 +10,16 @@ router = APIRouter(prefix="/api", tags=["skin-analysis"])
 results_cache: dict[str, dict] = {}
 
 
-@router.post("/analyze", response_model=AnalysisResponse)
+@router.post("/analyze")
 async def analyze_skin(file: UploadFile = File(...)):
     """
-    Upload an image and start skin analysis
+    Upload an image and perform complete skin analysis.
 
-    Returns task_id for polling results
+    This endpoint now performs the FULL analysis pipeline:
+    - BYPASS_YOUCAM=true: Uses mock data + MediaPipe + GPT-4o-mini
+    - BYPASS_YOUCAM=false: Uses real YouCam API + MediaPipe + GPT-4o-mini
+
+    Returns complete analysis results (scores, overlays, AI analysis texts)
     """
     try:
         # Validate file type
@@ -29,27 +33,15 @@ async def analyze_skin(file: UploadFile = File(...)):
         if len(content) > 10 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
 
-        # Start analysis (async - don't wait for completion)
-        # We'll return task_id immediately and let frontend poll
-        file_id = await youcam_service.upload_file(
+        # Perform complete analysis (respects BYPASS_YOUCAM setting)
+        result = await youcam_service.analyze_image(
             content, file.filename or "image.jpg", file.content_type
         )
 
-        task_id = await youcam_service.submit_task(file_id)
+        # Cache the result
+        results_cache[result["task_id"]] = result
 
-        # Store original image in cache for later composite generation
-        import base64
-        results_cache[task_id] = {
-            "status": "processing",
-            "task_id": task_id,
-            "original_image": base64.b64encode(content).decode("utf-8"),  # Store for composite
-        }
-
-        return AnalysisResponse(
-            task_id=task_id,
-            status="processing",
-            message="Analysis started successfully. Use /api/result/{task_id} to check status.",
-        )
+        return JSONResponse(content=result)
 
     except HTTPException:
         raise
