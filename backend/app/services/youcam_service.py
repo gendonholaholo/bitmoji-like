@@ -75,16 +75,23 @@ class YouCamService:
         Returns:
             task_id for polling results
         """
-        # Use SD (Standard Definition) actions for faster processing
-        # Based on user requirements for speed optimization
+        # All 14 available actions from YouCam API v2.0 documentation
+        # Mapped to Indonesian UI: Laporan Permukaan + Laporan Mendalam
         dst_actions = [
-            "acne",
-            "pore",
-            "wrinkle",
-            "texture",
-            "age_spot",
+            "acne",               # Jerawat
+            "dark_circle_v2",     # Lingkaran Hitam
+            "droopy_upper_eyelid",
+            "firmness",           # Serat Kolagen
+            "oiliness",           # Sebum
+            "radiance",           # Warna Kulit
+            "age_spot",           # Flek, Titik UV, Pigmen
+            "wrinkle",            # Keriput
+            "redness",            # Sensitivitas PL
+            "texture",            # Tekstur
+            "moisture",           # Kelembaban
+            "eye_bag",            # Kantung Mata
             "droopy_lower_eyelid",
-            "eye_bag",
+            "pore",               # Pori-Pori, Komedo
         ]
 
         payload = {
@@ -99,7 +106,7 @@ class YouCamService:
             response = await client.post(
                 f"{self.base_url}/task/skin-analysis", headers=self.headers, json=payload
             )
-            
+
             # Log detailed error information for debugging
             if response.status_code != 200:
                 print(f"ERROR: YouCam API returned status {response.status_code}")
@@ -107,7 +114,7 @@ class YouCamService:
                 print(f"Request payload: {json.dumps(payload, indent=2)}")
                 print(f"Response body: {response.text}")
                 print(f"Response headers: {dict(response.headers)}")
-            
+
             response.raise_for_status()
             result = response.json()
 
@@ -208,7 +215,10 @@ class YouCamService:
         scores, masks = await self.download_and_extract_zip(zip_url, task_id)
 
         # Step 5: Generate composite visualization
-        from app.services.image_processing import create_composite_visualization
+        from app.services.image_processing import (
+            create_all_concern_overlays,
+            create_composite_visualization,
+        )
 
         try:
             composite_bytes = create_composite_visualization(
@@ -222,6 +232,17 @@ class YouCamService:
             # Fallback to original image if composite fails
             composite_b64 = base64.b64encode(image_content).decode("utf-8")
 
+        # Step 5b: Generate per-concern overlay images
+        concern_overlays_b64 = {}
+        try:
+            concern_overlays = create_all_concern_overlays(image_content, masks)
+            concern_overlays_b64 = {
+                name: base64.b64encode(content).decode("utf-8")
+                for name, content in concern_overlays.items()
+            }
+        except Exception as e:
+            print(f"Warning: Failed to create concern overlays: {e}")
+
         # Convert masks to base64 for JSON response
         masks_b64 = {
             name: base64.b64encode(content).decode("utf-8") for name, content in masks.items()
@@ -230,13 +251,24 @@ class YouCamService:
         # Convert original image to base64
         original_b64 = base64.b64encode(image_content).decode("utf-8")
 
+        # Step 6: Generate dynamic analysis texts
+        from app.services.analysis_texts import generate_all_analysis_texts
+
+        analysis_texts = {}
+        try:
+            analysis_texts = generate_all_analysis_texts(scores)
+        except Exception as e:
+            print(f"Warning: Failed to generate analysis texts: {e}")
+
         return {
             "task_id": task_id,
             "status": "completed",
             "scores": scores,
-            "composite_image": composite_b64,  # NEW: Composite visualization
+            "composite_image": composite_b64,  # Composite visualization
+            "concern_overlays": concern_overlays_b64,  # Per-concern overlay images
             "masks": masks_b64,
             "original_image": original_b64,
+            "analysis_texts": analysis_texts,  # Dynamic Indonesian analysis texts
         }
 
 

@@ -1,0 +1,74 @@
+.gauge-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+}
+
+.gauge-svg {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    overflow: hidden;
+}
+
+.gauge-fill {
+    transition: stroke-dashoffset 1.5s ease-out;
+}
+
+.gauge-score {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.gauge-score-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    margin-top: -0.5rem;
+}
+
+.gauge-score-value {
+    font-size: 2rem;
+    font-weight: 700;
+    text-shadow: 0 0 15px currentColor;
+}
+
+.gauge-score-max {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-left: 0.25rem;
+}
+
+.gauge-level-desc {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 0.5rem;
+}
+
+/* Animation for the arc fill */
+@keyframes fillGauge {
+    from {
+        stroke-dashoffset: 377;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* Subtle glow effect on hover - contained within clip bounds */
+.gauge-container:hover .gauge-fill {
+    opacity: 0.95;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .gauge-svg {
+        max-width: 250px;
+    }
+
+    .gauge-score-value {
+        font-size: 1.75rem;
+    }
+}

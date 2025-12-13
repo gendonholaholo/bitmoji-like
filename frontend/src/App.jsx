@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import UploadSection from './components/UploadSection';
 import ResultsDashboard from './components/ResultsDashboard';
-import { uploadImage, pollResult } from './services/api';
+import { uploadImage, pollResult, isMockMode } from './services/api';
 import './App.css';
 
 function App() {
@@ -52,6 +52,13 @@ function App() {
 
   return (
     <div className="app">
+      {/* Mock Mode Indicator */}
+      {isMockMode() && (
+        <div className="mock-mode-badge">
+          📦 MOCK MODE
+        </div>
+      )}
+      
       {!results ? (
         <>
           <UploadSection
