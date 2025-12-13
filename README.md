@@ -1,6 +1,6 @@
-# YouCam Skin Analysis
+# Bitmoji-like Skin Analysis
 
-**YouCam Skin Analysis** adalah demo aplikasi web canggih yang dirancang untuk memberikan pengalaman analisis kulit tingkat profesional secara real-time. Aplikasi ini menyimulasikan pengalaman "Live Camera" untuk mendeteksi berbagai kondisi kulit menggunakan kecerdasan buatan, memberikan wawasan dermatologis instan yang dipresentasikan dalam antarmuka yang modern dan futuristik.
+**Bitmoji-like Skin Analysis** adalah demo aplikasi web canggih yang dirancang untuk memberikan pengalaman analisis kulit tingkat profesional secara real-time. Aplikasi ini menyimulasikan pengalaman "Live Camera" untuk mendeteksi berbagai kondisi kulit menggunakan kecerdasan buatan, memberikan wawasan dermatologis instan yang dipresentasikan dalam antarmuka yang modern dan futuristik.
 
 ## Tinjauan Proyek
 
