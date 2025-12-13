@@ -58,6 +58,20 @@ Berikut adalah tampilan antarmuka aplikasi yang telah dikembangkan:
 
 *Overlay visual yang memetakan masalah kulit secara spesifik pada wajah pengguna, menunjukkan presisi deteksi AI.*
 
+#### Legenda Peta Visual (Visual Map Legend)
+
+Setiap warna pada overlay merepresentasikan deteksi kondisi kulit spesifik:
+
+| Warna Visual | Kondisi Terdeteksi (Detected Concern) | Deskripsi |
+| :--- | :--- | :--- |
+| 🔴 **Merah** | **Acne** (Jerawat) | Mendeteksi area infl amasi dan jerawat aktif |
+| 🟠 **Oranye** | **Pore** (Pori-pori) | Menandai area dengan pori-pori yang terlihat membesar |
+| 🟡 **Kuning** | **Wrinkle** (Kerutan) | Mengidentifikasi garis halus dan kerutan dalam |
+| 🟣 **Ungu** | **Texture** (Tekstur) | Menunjukkan ketidakrataan permukaan kulit |
+| 🟤 **Coklat** | **Age Spot** (Flek) | Menandai hiperpigmentasi dan bintik penuaan |
+| 🔵 **Indigo** | **Eye Bag** (Kantung Mata) | Mendeteksi pembengkakan di bawah mata |
+| 🔵 **Biru** | **Dark Circle** (Lingkaran Hitam) | Mengidentifikasi pigmentasi gelap di area mata |
+
 ---
 
 ## Skin Analysis Metrics
