@@ -39,7 +39,7 @@ export default function ResultsDashboard({ results }) {
         return null;
     }
 
-    const { scores, composite_image, masks, original_image, analysis_texts, concern_overlays } = results;
+    const { scores, composite_image, masks, original_image, analysis_texts, concern_overlays, landmark_statuses } = results;
 
     // Extract score value from various score structures
     const getScoreValue = (key) => {
@@ -285,6 +285,7 @@ export default function ResultsDashboard({ results }) {
                         composite_image ? `data:image/jpeg;base64,${composite_image}` : null
                     }
                     analysisText={analysis_texts?.[currentConcern.key.replace('_v2', '')]}
+                    landmarkStatus={landmark_statuses?.[currentConcern.key.replace('_v2', '')]}
                 />
             </div>
         );

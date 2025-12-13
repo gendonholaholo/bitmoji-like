@@ -218,6 +218,7 @@ class YouCamService:
         from app.services.image_processing import (
             create_all_concern_overlays,
             create_composite_visualization,
+            create_landmark_enhanced_overlays,
         )
 
         try:
@@ -232,16 +233,30 @@ class YouCamService:
             # Fallback to original image if composite fails
             composite_b64 = base64.b64encode(image_content).decode("utf-8")
 
-        # Step 5b: Generate per-concern overlay images
+        # Step 5b: Generate per-concern overlay images with landmark enhancement
         concern_overlays_b64 = {}
+        landmark_statuses = {}
         try:
-            concern_overlays = create_all_concern_overlays(image_content, masks)
+            # Gunakan landmark-enhanced overlays (MediaPipe + YouCam mask)
+            concern_overlays, landmark_statuses = create_landmark_enhanced_overlays(
+                image_content, masks
+            )
             concern_overlays_b64 = {
                 name: base64.b64encode(content).decode("utf-8")
                 for name, content in concern_overlays.items()
             }
         except Exception as e:
-            print(f"Warning: Failed to create concern overlays: {e}")
+            print(f"Warning: Failed to create landmark-enhanced overlays: {e}")
+            # Fallback ke overlay biasa tanpa landmark
+            try:
+                concern_overlays = create_all_concern_overlays(image_content, masks)
+                concern_overlays_b64 = {
+                    name: base64.b64encode(content).decode("utf-8")
+                    for name, content in concern_overlays.items()
+                }
+                landmark_statuses = {"_global": {"landmark_status": "failed", "fallback_used": True}}
+            except Exception as e2:
+                print(f"Warning: Fallback overlay creation also failed: {e2}")
 
         # Convert masks to base64 for JSON response
         masks_b64 = {
@@ -267,10 +282,11 @@ class YouCamService:
             "status": "completed",
             "scores": scores,
             "composite_image": composite_b64,  # Composite visualization
-            "concern_overlays": concern_overlays_b64,  # Per-concern overlay images
+            "concern_overlays": concern_overlays_b64,  # Per-concern overlay images (landmark-enhanced)
             "masks": masks_b64,
             "original_image": original_b64,
             "analysis_texts": analysis_texts,  # Dynamic Indonesian analysis texts
+            "landmark_statuses": landmark_statuses,  # Status deteksi landmark per concern
         }
 
 

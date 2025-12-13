@@ -256,3 +256,36 @@ def create_all_concern_overlays(
             print(f"Warning: Failed to create overlay for {concern}: {e}")
 
     return result
+
+
+
+# ============================================================================
+# LANDMARK-ENHANCED VISUALIZATION
+# Menggunakan MediaPipe untuk visualisasi canny-style yang lebih kaya
+# ============================================================================
+
+def create_landmark_enhanced_overlays(
+    original_image_bytes: bytes,
+    masks: dict[str, bytes],
+) -> tuple[dict[str, bytes], dict[str, dict]]:
+    """
+    Create landmark-enhanced overlay images for all concerns.
+
+    Menggunakan MediaPipe Face Mesh untuk menambahkan:
+    - Zone boundaries (polygon outlines)
+    - Landmark dots
+    - Canny-style mesh visualization
+
+    Args:
+        original_image_bytes: Original uploaded image
+        masks: Dictionary of mask_name -> PNG bytes
+
+    Returns:
+        Tuple of:
+        - Dictionary of concern_key -> JPEG image bytes
+        - Dictionary of concern_key -> status dict (landmark_status, etc.)
+    """
+    from app.services.landmark_service import get_landmark_service
+
+    service = get_landmark_service()
+    return service.create_all_zone_visualizations(original_image_bytes, masks)
