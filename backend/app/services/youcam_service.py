@@ -99,6 +99,15 @@ class YouCamService:
             response = await client.post(
                 f"{self.base_url}/task/skin-analysis", headers=self.headers, json=payload
             )
+            
+            # Log detailed error information for debugging
+            if response.status_code != 200:
+                print(f"ERROR: YouCam API returned status {response.status_code}")
+                print(f"Request URL: {self.base_url}/task/skin-analysis")
+                print(f"Request payload: {json.dumps(payload, indent=2)}")
+                print(f"Response body: {response.text}")
+                print(f"Response headers: {dict(response.headers)}")
+            
             response.raise_for_status()
             result = response.json()
 

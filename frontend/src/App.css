@@ -1,50 +1,54 @@
 .app {
   min-height: 100vh;
-  padding: var(--spacing-xl) 0;
+  padding: var(--spacing-lg) 0;
 }
 
 .progress-info {
   max-width: 800px;
-  margin: var(--spacing-xl) auto;
+  margin: var(--spacing-lg) auto;
   text-align: center;
-  color: white;
+  color: #ffffff;
 }
 
 .progress-info p {
   font-size: 1.125rem;
   margin-bottom: var(--spacing-sm);
+  text-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
 }
 
 .progress-tip {
   font-size: 0.875rem;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .error-banner {
   max-width: 800px;
-  margin: var(--spacing-xl) auto;
-  padding: var(--spacing-xl);
+  margin: var(--spacing-lg) auto;
+  padding: var(--spacing-lg);
   background: rgba(239, 68, 68, 0.1);
-  border: 2px solid var(--danger);
+  border: 2px solid rgba(239, 68, 68, 0.5);
   border-radius: var(--radius-lg);
   text-align: center;
-  color: white;
+  color: #ffffff;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(239, 68, 68, 0.2);
 }
 
 .error-banner p {
   font-size: 1.125rem;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
   font-weight: 600;
 }
 
 .reset-section {
   max-width: 1200px;
-  margin: var(--spacing-2xl) auto;
-  padding: 0 var(--spacing-2xl);
+  margin: var(--spacing-lg) auto;
+  padding: 0 var(--spacing-lg);
   text-align: center;
 }
 
 .reset-section .btn {
   font-size: 1.125rem;
-  padding: var(--spacing-lg) var(--spacing-2xl);
+  padding: var(--spacing-md) var(--spacing-xl);
 }
