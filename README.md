@@ -4,14 +4,14 @@
 
 ## Tinjauan Proyek
 
-Proyek ini dikembangkan sebagai demonstrasi kemampuan **Fullstack Development** dan **Integrasi AI/Computer Vision**. Fokus utama adalah menciptakan pengalaman pengguna yang seamless, di mana pengguna dapat "mengambil selfie" dan mendapatkan hasil analisis mendalam dalam hitungan detik.
+Proyek ini dikembangkan sebagai demonstrasi kemampuan **Fullstack Development** dan **Advanced Computer Vision Engineering**. Fokus utama adalah menciptakan pengalaman pengguna yang seamless, di mana pengguna dapat "mengambil selfie" dan mendapatkan hasil analisis mendalam dalam hitungan detik.
 
 ### Demonstrasi Keahlian (Developer Capabilities)
 
 Saya (**Ghaws Shafadonia**) mengembangkan solusi ini untuk membuktikan kompetensi dalam ranah high-level engineering:
 
 *   **Fullstack Architecture Mastery**: Membangun jembatan yang kokoh antara backend yang kompleks (pemrosesan data AI) dan frontend yang responsif.
-*   **Implementasi Face Recognition & AI**: Menangani pipeline data biometrik yang sensitif dan kompleks, menerjemahkan data mentah AI menjadi wawasan visual yang mudah dipahami manusia.
+*   **Computer Vision & AI Engineering**: Membangun pipeline pemrosesan citra biometrik yang kompleks, memproses data visual mentah menjadi wawasan dermatologis yang presisi.
 *   **Advanced UI/UX Implementation**: Menerjemahkan kebutuhan data yang rumit menjadi dashboard visual yang estetik (Futuristic Dark Theme) dan mudah dibaca, membuktikan kemampuan dalam menciptakan produk digital berstandar industri.
 *   **Complex State Management**: Menangani flow asinkronus real-time (scanning, processing, analyzing) untuk memberikan feedback instan kepada pengguna tanpa lag.
 
