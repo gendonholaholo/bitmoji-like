@@ -91,6 +91,12 @@ uploads/
 *.png
 output.*
 
+# Allow documentation assets
+!assets/
+!assets/*.jpeg
+!assets/*.jpg
+!assets/*.png
+
 # Antigravity artifacts (keep for documentation)
 !.gemini/antigravity/brain/**/*.png
 !.gemini/antigravity/brain/**/*.webp
