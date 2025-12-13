@@ -1,0 +1,50 @@
+.app {
+  min-height: 100vh;
+  padding: var(--spacing-xl) 0;
+}
+
+.progress-info {
+  max-width: 800px;
+  margin: var(--spacing-xl) auto;
+  text-align: center;
+  color: white;
+}
+
+.progress-info p {
+  font-size: 1.125rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+.progress-tip {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.error-banner {
+  max-width: 800px;
+  margin: var(--spacing-xl) auto;
+  padding: var(--spacing-xl);
+  background: rgba(239, 68, 68, 0.1);
+  border: 2px solid var(--danger);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: white;
+}
+
+.error-banner p {
+  font-size: 1.125rem;
+  margin-bottom: var(--spacing-lg);
+  font-weight: 600;
+}
+
+.reset-section {
+  max-width: 1200px;
+  margin: var(--spacing-2xl) auto;
+  padding: 0 var(--spacing-2xl);
+  text-align: center;
+}
+
+.reset-section .btn {
+  font-size: 1.125rem;
+  padding: var(--spacing-lg) var(--spacing-2xl);
+}

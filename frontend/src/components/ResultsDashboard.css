@@ -1,0 +1,239 @@
+/* Results Container with Purple Gradient Background */
+.results-container {
+    position: relative;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.gradient-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    z-index: -1;
+}
+
+.results-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* Header Title */
+.results-title {
+    text-align: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin-bottom: 2rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Cards (Overall Score + Skin Age) */
+.header-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.header-card {
+    text-align: center;
+    padding: 1.5rem;
+    color: white;
+}
+
+.header-card-title {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    opacity: 0.95;
+}
+
+.header-card-value {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #ffd700;
+}
+
+.header-card-value.skin-age {
+    color: #ffed4e;
+}
+
+.header-card-subtitle {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+/* Glassmorphism Card */
+.glass-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+/* Composite Image Section */
+.composite-section {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.composite-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Concerns Grid */
+.concerns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.concern-card {
+    padding: 1.5rem;
+    color: white;
+    transition: transform 0.2s ease;
+}
+
+.concern-card:hover {
+    transform: translateY(-2px);
+}
+
+.concern-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.concern-icon {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.concern-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.concern-score {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.concern-score.score-excellent {
+    color: #10b981;
+}
+
+.concern-score.score-good {
+    color: #f59e0b;
+}
+
+.concern-score.score-attention {
+    color: #ef4444;
+}
+
+.concern-bar-container {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.concern-bar {
+    height: 100%;
+    transition: width 1s ease;
+    border-radius: 3px;
+}
+
+.concern-bar.score-excellent {
+    background: #10b981;
+}
+
+.concern-bar.score-good {
+    background: #f59e0b;
+}
+
+.concern-bar.score-attention {
+    background: #ef4444;
+}
+
+/* Score Guide */
+.score-guide {
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 2rem;
+}
+
+.guide-title {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.guide-items {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.guide-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.guide-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.guide-color.score-excellent {
+    background: #10b981;
+}
+
+.guide-color.score-good {
+    background: #f59e0b;
+}
+
+.guide-color.score-attention {
+    background: #ef4444;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .results-container {
+        padding: 1rem;
+    }
+
+    .header-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .header-card-value {
+        font-size: 2.5rem;
+    }
+
+    .concerns-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .guide-items {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
