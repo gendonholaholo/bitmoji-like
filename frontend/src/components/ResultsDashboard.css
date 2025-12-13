@@ -1,8 +1,8 @@
-/* Results Container with Purple Gradient Background */
+/* Results Container with Futuristic Black Theme */
 .results-container {
     position: relative;
     min-height: 100vh;
-    padding: 2rem;
+    padding: 1.25rem;
 }
 
 .gradient-background {
@@ -11,7 +11,10 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background:
+        radial-gradient(circle at top right, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+        linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0f1419 100%);
     z-index: -1;
 }
 
@@ -25,57 +28,67 @@
 /* Header Title */
 .results-title {
     text-align: center;
-    color: white;
-    font-size: 1.5rem;
+    color: #ffffff;
+    font-size: 1.25rem;
     font-weight: 500;
-    margin-bottom: 2rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+    letter-spacing: 0.5px;
 }
 
 /* Header Cards (Overall Score + Skin Age) */
 .header-cards {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .header-card {
     text-align: center;
-    padding: 1.5rem;
-    color: white;
+    padding: 1rem;
+    color: #ffffff;
 }
 
 .header-card-title {
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    margin-bottom: 1rem;
-    opacity: 0.95;
+    margin-bottom: 0.75rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .header-card-value {
-    font-size: 3.5rem;
+    font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: #ffd700;
+    margin-bottom: 0.25rem;
+    color: #00d4ff;
+    text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
 }
 
 .header-card-value.skin-age {
-    color: #ffed4e;
+    color: #a855f7;
+    text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
 }
 
 .header-card-subtitle {
-    font-size: 0.875rem;
-    opacity: 0.8;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* Glassmorphism Card */
+/* Glassmorphism Card - Dark Futuristic */
 .glass-card {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(0, 212, 255, 0.1),
+        inset 0 0 20px rgba(255, 255, 255, 0.02);
 }
 
 /* ========================================
@@ -84,21 +97,26 @@
 .main-visual {
     display: flex;
     justify-content: center;
-    margin: 2rem 0;
+    margin: 1rem 0;
 }
 
 .large-composite {
     width: 100%;
-    max-width: 800px;
+    max-width: 600px;
     height: auto;
-    border-radius: 20px;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    transition: transform 0.3s ease;
+    border-radius: 16px;
+    box-shadow:
+        0 12px 48px rgba(0, 0, 0, 0.6),
+        0 0 30px rgba(0, 212, 255, 0.2);
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    transition: all 0.3s ease;
 }
 
 .large-composite:hover {
-    transform: scale(1.02);
+    transform: scale(1.01);
+    box-shadow:
+        0 12px 48px rgba(0, 0, 0, 0.8),
+        0 0 40px rgba(0, 212, 255, 0.4);
 }
 
 /* ========================================
@@ -107,41 +125,51 @@
 .mini-concerns {
     display: flex;
     justify-content: center;
-    gap: 1rem;
-    margin: 2rem 0;
+    gap: 0.75rem;
+    margin: 1rem 0;
     flex-wrap: wrap;
 }
 
 .mini-concern-card {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 1rem 1.5rem;
-    min-width: 160px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    border-radius: 10px;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    padding: 0.75rem 1.25rem;
+    min-width: 140px;
     text-align: center;
-    color: white;
-    transition: transform 0.2s ease;
+    color: #ffffff;
+    transition: all 0.2s ease;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 15px rgba(0, 212, 255, 0.1);
 }
 
 .mini-concern-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    border-color: rgba(0, 212, 255, 0.6);
+    box-shadow:
+        0 6px 24px rgba(0, 0, 0, 0.6),
+        0 0 25px rgba(0, 212, 255, 0.3);
 }
 
 .mini-concern-label {
-    font-size: 0.875rem;
-    margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     justify-content: center;
-    opacity: 0.9;
+    opacity: 0.85;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .mini-concern-score {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
+    text-shadow: 0 0 15px currentColor;
 }
 
 .mini-concern-score.score-excellent {
@@ -184,28 +212,32 @@
 
 /* Score Guide */
 .score-guide {
-    padding: 1.5rem;
-    color: white;
-    margin-bottom: 2rem;
+    padding: 1rem;
+    color: #ffffff;
+    margin-bottom: 1rem;
 }
 
 .guide-title {
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
 }
 
 .guide-items {
     display: flex;
-    gap: 2rem;
+    gap: 1.5rem;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .guide-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
 }
 
 .guide-color {
@@ -229,25 +261,35 @@
 /* Responsive */
 @media (max-width: 768px) {
     .results-container {
-        padding: 1rem;
+        padding: 0.75rem;
     }
 
     .header-cards {
         grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .header-card {
+        padding: 0.75rem;
     }
 
     .header-card-value {
-        font-size: 2.5rem;
+        font-size: 2rem;
+    }
+
+    .results-title {
+        font-size: 1rem;
     }
 
     .large-composite {
         max-width: 100%;
-        border-radius: 16px;
+        border-radius: 12px;
     }
 
     .mini-concerns {
         flex-direction: column;
         align-items: center;
+        gap: 0.5rem;
     }
 
     .mini-concern-card {
@@ -257,6 +299,6 @@
 
     .guide-items {
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.5rem;
     }
 }

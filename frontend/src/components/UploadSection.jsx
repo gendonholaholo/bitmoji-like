@@ -65,7 +65,7 @@ export default function UploadSection({ onImageUpload, isProcessing }) {
         <div className="upload-section fade-in">
             <div className="upload-header">
                 <h1>AI Skin Analysis</h1>
-                <p>Upload your selfie for comprehensive skin analysis</p>
+                <p>Take a selfie for comprehensive skin analysis</p>
             </div>
 
             <div
