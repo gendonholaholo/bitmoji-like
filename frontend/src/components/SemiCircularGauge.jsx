@@ -63,7 +63,8 @@ export default function SemiCircularGauge({ score, label, animated = true }) {
         const endX = centerX + radius * Math.cos(endRad);
         const endY = centerY + radius * Math.sin(endRad);
 
-        const largeArc = percentage > 50 ? 1 : 0;
+        // For semi-circle gauge (0-180°), arc is NEVER > 180°, so largeArc is always 0
+        const largeArc = 0;
 
         return `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY}`;
     };
@@ -79,8 +80,8 @@ export default function SemiCircularGauge({ score, label, animated = true }) {
 
     // ClipPath for constraining the filled arc within track bounds
     // Semi-annulus shape: outer radius 132, inner radius 108 (120 ± 12)
-    // FIXED: sweep-flag 0 for outer (counter-clockwise = UP), 1 for inner (clockwise = UP from right)
-    const clipPathD = "M 18 140 A 132 132 0 0 0 282 140 L 258 140 A 108 108 0 0 1 42 140 Z";
+    // In SVG: clockwise (sweep=1) from left to right = arc ABOVE the line
+    const clipPathD = "M 18 140 A 132 132 0 0 1 282 140 L 258 140 A 108 108 0 0 0 42 140 Z";
 
     return (
         <div className="gauge-container">
@@ -153,8 +154,9 @@ export default function SemiCircularGauge({ score, label, animated = true }) {
 
                 {/* Level indicators (I-V) on outer arc */}
                 {['I', 'II', 'III', 'IV', 'V'].map((lvl, i) => {
-                    // Position levels around the arc (V at left, I at right)
-                    const positions = [170, 135, 90, 45, 10]; // Percentages
+                    // Position levels around the arc (V at left/0%, I at right/100%)
+                    // Level ranges: V(0-19), IV(20-39), III(40-59), II(60-79), I(80-100)
+                    const positions = [90, 70, 50, 30, 10]; // Valid 0-100% range
                     const angle = -180 + (positions[i] / 100) * 180;
                     const rad = (angle * Math.PI) / 180;
                     const r = 155;
