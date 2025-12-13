@@ -88,6 +88,16 @@ class AnalysisResponse(BaseModel):
     message: str = "Analysis started successfully"
 
 
+class LandmarkStatus(BaseModel):
+    """Status deteksi landmark untuk transparency"""
+
+    landmark_status: str  # "success", "partial", "failed"
+    landmark_error: str | None = None
+    confidence: float = 0.0
+    fallback_used: bool = False
+    visualization_source: str = "none"  # "mediapipe", "mask_only", "none"
+
+
 class ResultResponse(BaseModel):
     """Response with complete analysis results"""
 
@@ -95,9 +105,12 @@ class ResultResponse(BaseModel):
     status: str
     scores: SkinAnalysisScores | None = None
     composite_image: str | None = None  # base64 encoded composite visualization
-    concern_overlays: dict[str, str] | None = None  # concern_name -> base64 encoded overlay
+    concern_overlays: dict[str, str] | None = (
+        None  # concern_name -> base64 encoded overlay (landmark-enhanced)
+    )
     masks: dict[str, str] | None = None  # mask_name -> base64 encoded image
     original_image: str | None = None  # base64 encoded original image
     analysis_texts: dict[str, AIAnalysisText] | None = None  # AI-generated analysis texts
+    landmark_statuses: dict[str, LandmarkStatus] | None = None  # Status landmark per concern
     error: str | None = None
     error_message: str | None = None

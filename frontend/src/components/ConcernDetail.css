@@ -249,3 +249,60 @@
         font-size: 0.6rem;
     }
 }
+
+
+/* Landmark Status Indicator */
+.landmark-status {
+    position: absolute;
+    bottom: 60px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    font-size: 0.75rem;
+    z-index: 10;
+}
+
+.landmark-status.warning {
+    background: rgba(255, 152, 0, 0.15);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    color: #ffb74d;
+}
+
+.landmark-status.info {
+    background: rgba(33, 150, 243, 0.15);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    color: #64b5f6;
+}
+
+.landmark-status .status-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.landmark-status .status-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.landmark-status .status-message {
+    font-weight: 500;
+}
+
+.landmark-status .status-detail {
+    font-size: 0.65rem;
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    .landmark-status {
+        bottom: 50px;
+        padding: 6px 10px;
+        font-size: 0.7rem;
+    }
+}

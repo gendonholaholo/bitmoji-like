@@ -70,9 +70,35 @@ export default function ConcernDetail({
     concernOverlay,
     compositeImage,
     analysisText,
+    landmarkStatus,
 }) {
     const analysis = analysisText || DEFAULT_ANALYSIS;
     const legends = MARKER_LEGENDS[concern.key] || MARKER_LEGENDS.pore;
+    
+    // Status landmark untuk transparency
+    const getLandmarkStatusMessage = () => {
+        if (!landmarkStatus) return null;
+        
+        if (landmarkStatus.landmark_status === 'failed') {
+            return {
+                type: 'warning',
+                message: landmarkStatus.landmark_error || 'Deteksi landmark gagal',
+                detail: landmarkStatus.fallback_used 
+                    ? 'Menggunakan visualisasi mask dasar' 
+                    : 'Area deteksi mungkin tidak akurat'
+            };
+        }
+        if (landmarkStatus.landmark_status === 'partial') {
+            return {
+                type: 'info',
+                message: 'Deteksi landmark sebagian',
+                detail: `Confidence: ${Math.round(landmarkStatus.confidence * 100)}%`
+            };
+        }
+        return null;
+    };
+    
+    const statusMessage = getLandmarkStatusMessage();
 
     // Get the best overlay image for this specific concern
     const getOverlayImage = () => {
@@ -107,6 +133,19 @@ export default function ConcernDetail({
                                 </div>
                             ))}
                         </div>
+                        
+                        {/* Landmark status indicator (transparency) */}
+                        {statusMessage && (
+                            <div className={`landmark-status ${statusMessage.type}`}>
+                                <span className="status-icon">
+                                    {statusMessage.type === 'warning' ? '⚠️' : 'ℹ️'}
+                                </span>
+                                <div className="status-text">
+                                    <span className="status-message">{statusMessage.message}</span>
+                                    <span className="status-detail">{statusMessage.detail}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
