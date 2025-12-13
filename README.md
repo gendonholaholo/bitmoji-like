@@ -88,7 +88,7 @@ Sistem ini mampu mendeteksi dan menganalisis metrik kulit secara mendetail:
 ## Informasi Pengembang
 
 **Ghaws Shafadonia**
-*Fullstack Developer & AI Integration Specialist*
+*Fullstack Developer & Computer Vision Engineer*
 
 Email: fafaghaws@live.com
 Remote Repository: `git@github.com:gendonholaholo/bitmoji-like.git`
