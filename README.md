@@ -2,6 +2,14 @@
 
 **AI Skin Analysis** adalah aplikasi web canggih yang memberikan analisis kulit komprehensif menggunakan kecerdasan buatan. Aplikasi ini mengintegrasikan teknologi computer vision dengan AI untuk mendeteksi dan menganalisis berbagai kondisi kulit secara mendalam, menyajikan hasil dalam tiga kategori laporan yang terstruktur.
 
+> ⚠️ **Disclaimer**
+>
+> Proyek ini adalah **demo portfolio** untuk membuktikan kemampuan dalam Fullstack Development, Computer Vision Engineering, dan Advanced UI/UX. Sebagai demonstrasi teknis, aplikasi ini memiliki keterbatasan yang wajar dan tidak ditujukan sebagai produk siap produksi.
+>
+> **Keterbatasan Teknis**: Visualisasi landmark MediaPipe untuk beberapa parameter (seperti *Serat Kolagen*, *Sensitivitas PL*) memerlukan kalibrasi lebih lanjut.
+>
+> 🎬 **[Lihat Demo Video](https://drive.google.com/file/d/1q1DejnZMOu5KWOB4TMkgVSf0Bm0EVKyP/view?usp=drive_link)**
+
 ## Tinjauan Proyek
 
 Proyek ini dikembangkan sebagai demonstrasi kemampuan **Fullstack Development** dan **Advanced Computer Vision Engineering**. Pembaruan besar ini menghadirkan sistem analisis kulit yang lebih komprehensif dengan tiga jenis laporan terpisah dan fitur perbandingan visual interaktif.
