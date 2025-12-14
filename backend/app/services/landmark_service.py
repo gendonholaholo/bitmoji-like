@@ -24,6 +24,36 @@ class LandmarkStatus(str, Enum):
 
 
 @dataclass
+class FaceBoundingBox:
+    """Bounding box hasil deteksi wajah"""
+
+    x: int  # Left
+    y: int  # Top
+    width: int
+    height: int
+    confidence: float = 0.0
+
+    @property
+    def x2(self) -> int:
+        """Right edge"""
+        return self.x + self.width
+
+    @property
+    def y2(self) -> int:
+        """Bottom edge"""
+        return self.y + self.height
+
+    def contains_point(self, px: int, py: int, margin: float = 0.0) -> bool:
+        """Check if point is within bounding box with optional margin"""
+        margin_x = int(self.width * margin)
+        margin_y = int(self.height * margin)
+        return (
+            self.x - margin_x <= px <= self.x2 + margin_x
+            and self.y - margin_y <= py <= self.y2 + margin_y
+        )
+
+
+@dataclass
 class LandmarkResult:
     """Hasil deteksi landmark"""
 
@@ -31,135 +61,212 @@ class LandmarkResult:
     error_message: str | None = None
     landmarks: np.ndarray | None = None  # Shape: (468, 3) - x, y, z
     confidence: float = 0.0
+    face_bbox: FaceBoundingBox | None = None  # Bounding box wajah
+
+
+# ============================================================================
+# UV TINT CONFIGURATION
+# Konfigurasi efek UV-like untuk tampilan analisis profesional
+# Terinspirasi dari alat analisis kecantikan UV seperti skin analyzers
+# ============================================================================
+
+UV_TINT_CONFIG = {
+    "color": (0, 160, 170),  # Cyan/teal base color
+    "opacity": 0.35,  # 35% opacity untuk mempertahankan detail wajah
+    "blend_mode": "overlay",  # Mode blending
+}
+
+
+def _apply_uv_tint(image: Image.Image, config: dict = None) -> Image.Image:
+    """
+    Terapkan efek UV tint pada gambar untuk tampilan analisis profesional.
+
+    Efek ini memberikan warna cyan/teal yang khas dari alat analisis
+    kecantikan UV, membuat gambar terlihat seperti di bawah lampu UV.
+
+    Args:
+        image: PIL Image dalam mode RGBA
+        config: Optional config dict dengan keys 'color', 'opacity', 'blend_mode'
+
+    Returns:
+        PIL Image dengan UV tint applied
+    """
+    if config is None:
+        config = UV_TINT_CONFIG
+
+    color = config.get("color", (0, 160, 170))
+    opacity = config.get("opacity", 0.35)
+
+    width, height = image.size
+
+    # Pastikan image dalam mode RGBA
+    if image.mode != "RGBA":
+        image = image.convert("RGBA")
+
+    # Buat tint layer dengan opacity
+    alpha_value = int(255 * opacity)
+    tint_layer = Image.new("RGBA", (width, height), (*color, alpha_value))
+
+    # Blend menggunakan alpha composite
+    # Untuk efek yang lebih natural, kita multiply warna
+    result = image.copy()
+    img_array = np.array(result, dtype=np.float32)
+    tint_array = np.array(tint_layer, dtype=np.float32)
+
+    # Blend formula: result = original * (1 - tint_alpha) + tint * tint_alpha
+    # Dengan sedikit boost pada channel cyan untuk efek UV
+    tint_alpha = tint_array[:, :, 3:4] / 255.0
+
+    # Apply tint dengan preserving luminance
+    for i in range(3):  # RGB channels
+        img_array[:, :, i] = (
+            img_array[:, :, i] * (1 - tint_alpha[:, :, 0] * 0.6)
+            + tint_array[:, :, i] * tint_alpha[:, :, 0] * 0.6
+        )
+
+    # Boost cyan/blue channels sedikit untuk efek UV
+    img_array[:, :, 1] = np.clip(img_array[:, :, 1] * 1.05, 0, 255)  # Green
+    img_array[:, :, 2] = np.clip(img_array[:, :, 2] * 1.08, 0, 255)  # Blue
+
+    result = Image.fromarray(img_array.astype(np.uint8), mode="RGBA")
+
+    return result
+
+
+# ============================================================================
+# EXCLUSION ZONES - Area yang harus di-exclude dari analisis skin
+# Berdasarkan MediaPipe Face Mesh standard indices
+# Reference: github.com/google/mediapipe face_mesh_connections.py
+# ============================================================================
+
+EXCLUSION_ZONES = {
+    # Bibir/Mulut - bukan area kulit untuk analisis
+    "lips": [
+        61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318,
+        402, 317, 14, 87, 178, 88, 95, 185, 40, 39, 37, 0, 267, 269, 270,
+        409, 415, 310, 311, 312, 13, 82, 81, 42, 183, 78,
+    ],
+    # Mata kiri - bukan area kulit
+    "left_eye": [
+        362, 382, 381, 380, 374, 373, 390, 249, 263, 466,
+        388, 387, 386, 385, 384, 398,
+    ],
+    # Mata kanan - bukan area kulit
+    "right_eye": [
+        33, 7, 163, 144, 145, 153, 154, 155, 133, 173,
+        157, 158, 159, 160, 161, 246,
+    ],
+    # Alis kiri
+    "left_eyebrow": [336, 296, 334, 293, 300, 276, 283, 282, 295, 285],
+    # Alis kanan
+    "right_eyebrow": [70, 63, 105, 66, 107, 55, 65, 52, 53, 46],
+    # Pupil kiri (refined landmarks)
+    "left_pupil": [474, 475, 476, 477],
+    # Pupil kanan (refined landmarks)
+    "right_pupil": [469, 470, 471, 472],
+}
+
+# Set of all excluded landmark indices for quick lookup
+EXCLUDED_LANDMARK_INDICES = set()
+for zone_indices in EXCLUSION_ZONES.values():
+    EXCLUDED_LANDMARK_INDICES.update(zone_indices)
+
+
+def is_excluded_landmark(landmark_idx: int) -> bool:
+    """Check if a landmark index should be excluded from visualization."""
+    return landmark_idx in EXCLUDED_LANDMARK_INDICES
+
+
+def is_point_in_excluded_zone(
+    x: int, y: int, landmarks: np.ndarray, threshold: int = 15
+) -> bool:
+    """
+    Check if a point (x, y) is within any excluded zone.
+
+    Args:
+        x, y: Point coordinates
+        landmarks: Array of landmark coordinates (468, 3)
+        threshold: Distance threshold in pixels
+
+    Returns:
+        True if point should be excluded
+    """
+    for idx in EXCLUDED_LANDMARK_INDICES:
+        if idx < len(landmarks):
+            lx, ly = landmarks[idx][0], landmarks[idx][1]
+            dist = np.sqrt((x - lx) ** 2 + (y - ly) ** 2)
+            if dist < threshold:
+                return True
+    return False
 
 
 # ============================================================================
 # FACIAL ZONE DEFINITIONS
 # MediaPipe Face Mesh landmark indices untuk setiap zona wajah
 # Reference: https://github.com/google/mediapipe/blob/master/mediapipe/modules/face_geometry/data/canonical_face_model_uv_visualization.png
+#
+# RESEARCH BASIS (Updated based on dermatological literature):
+# - T-Zone = Forehead + Nose + Chin (high sebum areas)
+# - U-Zone = Both Cheeks (lower sebum areas)
+# Reference: Jung IS et al. "The Difference in Sebum Secretion Affecting
+#            Development of Acne." Ann Dermatol 2019;31(4):426-433
 # ============================================================================
 
 FACIAL_ZONES = {
-    # T-Zone (dahi + hidung) - area sebum/oiliness
+    # T-Zone (dahi + hidung + dagu) - area sebum tinggi
+    # Research: T-zone baseline sebum 80.6±39.1 a.u.
     "t_zone": {
         "forehead": [
-            10,
-            338,
-            297,
-            332,
-            284,
-            251,
-            389,
-            356,
-            454,
-            323,
-            361,
-            288,
-            397,
-            365,
-            379,
-            378,
-            400,
-            377,
-            152,
-            148,
-            176,
-            149,
-            150,
-            136,
-            172,
-            58,
-            132,
-            93,
-            234,
-            127,
-            162,
-            21,
-            54,
-            103,
-            67,
-            109,
+            10, 338, 297, 332, 284, 251, 389, 356, 454, 323,
+            361, 288, 397, 365, 379, 378, 400, 377, 152, 148,
+            176, 149, 150, 136, 172, 58, 132, 93, 234, 127,
+            162, 21, 54, 103, 67, 109, 151, 9, 8, 168,
         ],
-        "nose_bridge": [6, 197, 195, 5, 4, 1, 19, 94, 2, 164, 0, 267, 269, 270, 409, 291],
-        "nose_tip": [1, 2, 98, 327, 326, 97, 99, 240, 235, 219, 218, 237, 44, 1],
+        "nose": [
+            6, 197, 195, 5, 4, 1, 19, 94, 2, 164, 0,
+            267, 269, 270, 409, 291, 98, 327, 326, 97, 99,
+            240, 235, 219, 218, 237, 44, 278, 279, 360, 363,
+            281, 5, 4, 51, 281, 248, 456, 420, 399, 456,
+            248, 195, 196, 3, 236, 198, 174,
+        ],
+        # ADDED: Chin as part of T-zone per research
+        "chin": [
+            152, 377, 400, 378, 379, 365, 397, 288, 435, 401,
+            366, 447, 264, 372, 383, 380, 381, 382, 362, 398,
+            312, 311, 310, 415, 308, 324, 318, 402, 317, 14,
+            87, 178, 88, 95, 78, 191, 80, 81, 82, 13,
+            175, 396, 369, 395, 394, 364, 367, 416, 434,
+        ],
     },
-    # Pipi kiri
+    # U-Zone (kedua pipi) - area sebum rendah
+    # Research: U-zone baseline sebum 42.7±29.3 a.u.
+    "u_zone": {
+        "left_cheek": [
+            234, 93, 132, 58, 172, 136, 150, 149, 176, 148,
+            187, 207, 206, 205, 36, 142, 126, 217, 174, 196,
+            57, 43, 106, 182, 83, 18, 313, 406, 335, 273,
+            287, 410, 322, 391, 393,
+        ],
+        "right_cheek": [
+            454, 323, 361, 288, 397, 365, 379, 378, 400, 377,
+            411, 427, 426, 425, 266, 371, 355, 437, 399, 419,
+            287, 273, 335, 406, 313, 18, 83, 182, 106, 43,
+            57, 186, 92, 165, 167,
+        ],
+    },
+    # Pipi kiri (legacy alias untuk backward compatibility)
     "left_cheek": [
-        234,
-        93,
-        132,
-        58,
-        172,
-        136,
-        150,
-        149,
-        176,
-        148,
-        152,
-        377,
-        400,
-        378,
-        379,
-        365,
-        397,
-        288,
-        361,
-        323,
-        454,
-        356,
-        389,
-        251,
-        284,
-        332,
-        297,
-        338,
-        10,
-        109,
-        67,
-        103,
-        54,
-        21,
-        162,
-        127,
+        234, 93, 132, 58, 172, 136, 150, 149, 176, 148,
+        187, 207, 206, 205, 36, 142, 126, 217, 174, 196,
+        57, 43, 106, 182, 83, 18, 313, 406, 335, 273,
+        287, 410, 322, 391, 393,
     ],
-    # Pipi kanan
+    # Pipi kanan (legacy alias untuk backward compatibility)
     "right_cheek": [
-        454,
-        323,
-        361,
-        288,
-        397,
-        365,
-        379,
-        378,
-        400,
-        377,
-        152,
-        148,
-        176,
-        149,
-        150,
-        136,
-        172,
-        58,
-        132,
-        93,
-        234,
-        127,
-        162,
-        21,
-        54,
-        103,
-        67,
-        109,
-        10,
-        338,
-        297,
-        332,
-        284,
-        251,
-        389,
-        356,
+        454, 323, 361, 288, 397, 365, 379, 378, 400, 377,
+        411, 427, 426, 425, 266, 371, 355, 437, 399, 419,
+        287, 273, 335, 406, 313, 18, 83, 182, 106, 43,
+        57, 186, 92, 165, 167,
     ],
     # Area mata (untuk dark_circle, eye_bag)
     "left_eye_area": [226, 247, 30, 29, 27, 28, 56, 190, 243, 112, 26, 22, 23, 24, 110, 25],
@@ -231,60 +338,25 @@ FACIAL_ZONES = {
     # Nasolabial (lipatan hidung ke mulut)
     "left_nasolabial": [205, 50, 117, 118, 101, 36, 206, 203, 129, 102, 48, 115],
     "right_nasolabial": [425, 280, 346, 347, 330, 266, 426, 423, 358, 331, 278, 344],
-    # Dagu
+    # Dagu (legacy alias - sama dengan t_zone.chin)
     "chin": [
-        152,
-        377,
-        400,
-        378,
-        379,
-        365,
-        397,
-        288,
-        435,
-        401,
-        366,
-        447,
-        264,
-        372,
-        383,
-        380,
-        381,
-        382,
-        362,
-        398,
-        312,
-        311,
-        310,
-        415,
-        308,
-        324,
-        318,
-        402,
-        317,
-        14,
-        87,
-        178,
-        88,
-        95,
-        78,
-        191,
-        80,
-        81,
-        82,
-        13,
-        312,
-        311,
-        310,
-        415,
+        152, 377, 400, 378, 379, 365, 397, 288, 435, 401,
+        366, 447, 264, 372, 383, 380, 381, 382, 362, 398,
+        312, 311, 310, 415, 308, 324, 318, 402, 317, 14,
+        87, 178, 88, 95, 78, 191, 80, 81, 82, 13,
+        175, 396, 369, 395, 394, 364, 367, 416, 434,
     ],
 }
 
 # Mapping concern ke zona yang relevan
+# Updated berdasarkan research: T-zone untuk high-sebum, U-zone untuk comparison
 CONCERN_ZONE_MAPPING = {
-    "oiliness": ["t_zone"],
-    "acne": ["t_zone", "left_cheek", "right_cheek", "chin"],
-    "pore": ["t_zone", "left_cheek", "right_cheek"],
+    # Oiliness: T-zone (high sebum) + U-zone untuk perbandingan heat map
+    "oiliness": ["t_zone", "u_zone"],
+    # Acne: seluruh wajah (T-zone sudah termasuk chin)
+    "acne": ["t_zone", "u_zone"],
+    # Pore: T-zone (lebih visible) + U-zone
+    "pore": ["t_zone", "u_zone"],
     "wrinkle": [
         "forehead_center",
         "left_eye_area",
@@ -295,33 +367,603 @@ CONCERN_ZONE_MAPPING = {
     "dark_circle": ["left_under_eye", "right_under_eye"],
     "eye_bag": ["left_under_eye", "right_under_eye"],
     "age_spot": ["left_cheek", "right_cheek", "forehead_center"],
-    "redness": ["left_cheek", "right_cheek", "t_zone"],
-    "firmness": ["left_cheek", "right_cheek", "chin"],
-    "radiance": ["left_cheek", "right_cheek", "forehead_center"],
-    "texture": ["left_cheek", "right_cheek", "forehead_center"],
+    "redness": ["u_zone", "t_zone"],
+    "firmness": ["u_zone", "chin"],
+    "radiance": ["u_zone", "forehead_center"],
+    "texture": ["u_zone", "forehead_center"],
+}
+
+# ============================================================================
+# VISUALIZATION STYLE MAPPING
+# Menentukan tipe visualisasi per concern berdasarkan sifat kondisi kulit:
+# - "dots": Kondisi point-based (lesi diskrit) - acne, pore, age_spot
+# - "boundary": Kondisi area-based (zona/region) - oiliness, wrinkle, dll
+# - "heatmap": Gradient visualization untuk T-zone vs U-zone comparison
+# ============================================================================
+
+VISUALIZATION_STYLE_MAPPING = {
+    # Point-based concerns → DOT visualization
+    # Kondisi yang manifest sebagai spot/titik individual
+    "acne": "dots",  # Papul, pustul, komedo adalah lesi diskrit
+    "pore": "dots",  # Pori adalah bukaan folikel individual
+    "age_spot": "dots",  # Bintik hiperpigmentasi adalah spot diskrit
+    # HEATMAP visualization untuk sebum/oiliness
+    # Menunjukkan perbedaan T-zone (high sebum) vs U-zone (low sebum)
+    "oiliness": "heatmap",  # T-zone vs U-zone heat gradient
+    # Area-based concerns → BOUNDARY visualization
+    # Kondisi yang mempengaruhi zona/region kulit
+    "wrinkle": "boundary",  # Kerutan adalah fitur LINEAR
+    "dark_circle": "boundary",  # Lingkaran hitam adalah AREA bawah mata
+    "eye_bag": "boundary",  # Kantung mata adalah region
+    "redness": "boundary",  # Kemerahan menyebar di area
+    "firmness": "boundary",  # Properti regional kulit
+    "radiance": "boundary",  # Properti regional kulit
+    "texture": "boundary",  # Properti regional kulit
+}
+
+# ============================================================================
+# HEATMAP COLOR CONFIGURATION
+# Warna untuk T-zone dan U-zone berdasarkan distribusi sebum
+# Reference: Jung IS et al. Ann Dermatol 2019 - T-zone 80.6±39.1, U-zone 42.7±29.3
+# ============================================================================
+
+HEATMAP_ZONE_COLORS = {
+    # T-zone: Warna warm (high sebum) - forehead, nose, chin
+    # Sebum level ~2x lebih tinggi dari U-zone
+    "t_zone": {
+        "high_sebum": (255, 80, 80),    # Red - sangat berminyak (score < 33)
+        "mid_sebum": (255, 140, 80),    # Orange - berminyak sedang (33-65)
+        "low_sebum": (255, 200, 100),   # Yellow - berminyak ringan (score >= 66)
+    },
+    # U-zone: Warna cool (lower sebum) - cheeks
+    # Sebum level lebih rendah, lebih sehat
+    "u_zone": {
+        "high_sebum": (180, 100, 200),  # Purple - berminyak tinggi (score < 33)
+        "mid_sebum": (140, 160, 220),   # Blue-purple - sedang (33-65)
+        "low_sebum": (100, 200, 180),   # Teal - normal/sehat (score >= 66)
+    },
 }
 
 
-# Warna untuk setiap concern (RGB + Alpha)
+# ============================================================================
+# SEVERITY-BASED COLOR SYSTEM
+# Multi-level colors berdasarkan literature dermatologi:
+# - Glogau Scale (wrinkle): 4 levels photoaging
+# - Global Acne Grading System: 5 levels severity
+# - Baumann Skin Typing: oiliness classification
+# - Clinical pore assessment scales
+# - Periorbital hyperpigmentation classification
+#
+# Score mapping (YouCam API: 0-100, higher = healthier):
+# - HIGH score (≥66) = mild/minimal problem = Level 0 (least severe color)
+# - MID score (33-65) = moderate problem = Level 1
+# - LOW score (<33) = severe problem = Level 2+ (most severe color)
+# ============================================================================
+
+# Warna multi-level per concern - SINKRON dengan frontend MARKER_LEGENDS
+# Format: list of RGB tuples, index 0 = least severe, last index = most severe
+# UPDATED: Warna dioptimalkan untuk kontras dengan UV tint cyan/teal
+# Menggunakan pink/coral/magenta untuk concerns yang terlihat jelas di UV
+SEVERITY_COLOR_LEVELS = {
+    # Oiliness/Sebum - 3 levels (Research-based heatmap)
+    # Reference: Jung IS et al. Ann Dermatol 2019 - T-zone sebum 80.6±39.1 a.u.
+    # Heatmap colors: Yellow (normal) → Orange (berminyak) → Red (sangat berminyak)
+    "oiliness": [
+        (255, 200, 100),  # #ffc864 - T-zone normal (score >= 66) - yellow
+        (255, 140, 80),   # #ff8c50 - T-zone berminyak (33-65) - orange
+        (255, 80, 80),    # #ff5050 - T-zone sangat berminyak (< 33) - red
+    ],
+    # Pore - 3 levels (Clinical pore assessment)
+    # Reference: Flament F, et al. Skin Res Technol. 2015 - Facial pore assessment
+    # UV-optimized: Light cyan → orange → pink progression
+    "pore": [
+        (120, 220, 255),  # #78dcff - Pori tersumbat (mild, score >= 66) - light cyan
+        (255, 180, 140),  # #ffb48c - Pori membesar (moderate, 33-65) - peach
+        (255, 100, 130),  # #ff6482 - Area berminyak (severe, < 33) - coral pink
+    ],
+    # Wrinkle - 3 levels (Modified Glogau Scale simplified)
+    # Reference: Glogau RG. Aesthetic classification of photoaging. Dermatol Clin. 1991
+    # UV-optimized: Cyan → magenta → red-pink
+    "wrinkle": [
+        (100, 200, 255),  # #64c8ff - Garis halus (Type I-II, score >= 66) - sky blue
+        (200, 100, 220),  # #c864dc - Kerutan sedang (Type II-III, 33-65) - magenta
+        (255, 80, 120),  # #ff5078 - Kerutan dalam (Type III-IV, < 33) - hot pink
+    ],
+    # Acne - 3 levels (Global Acne Grading System simplified)
+    # Reference: Doshi A, et al. J Am Acad Dermatol. 1997 - Global Acne Grading System
+    # UV-optimized: Pink spectrum untuk visibility tinggi
+    "acne": [
+        (255, 200, 180),  # #ffc8b4 - Bekas jerawat (mild, score >= 66) - light peach
+        (255, 140, 160),  # #ff8ca0 - Area meradang (moderate, 33-65) - salmon pink
+        (255, 80, 100),  # #ff5064 - Jerawat aktif (severe, < 33) - coral red
+    ],
+    # Age spot/Flek - 4 levels (Pigmentation severity scale)
+    # Reference: Nouveau S, et al. Br J Dermatol. 2019 - Facial hyperpigmentation
+    # UV-optimized: Cyan → peach → coral → deep pink
+    "age_spot": [
+        (140, 220, 255),  # #8cdcff - Titik ringan (minimal, score >= 75) - light cyan
+        (255, 180, 150),  # #ffb496 - Bintik-bintik (mild, 50-74) - peach
+        (255, 130, 130),  # #ff8282 - Melasma (moderate, 25-49) - salmon
+        (255, 90, 120),  # #ff5a78 - Bintik dewasa (severe, < 25) - coral pink
+    ],
+    # Dark circle - 3 levels (Periorbital hyperpigmentation classification)
+    # Reference: Huang YL, et al. Int J Dermatol. 2014 - Dark eye circle classification
+    # UV-optimized: Blue → purple → magenta
+    "dark_circle": [
+        (130, 150, 255),  # #8296ff - Vaskular (mild, score >= 66) - periwinkle
+        (180, 100, 200),  # #b464c8 - Pigmentasi (moderate, 33-65) - orchid
+        (220, 80, 160),  # #dc50a0 - Struktural (severe, < 33) - deep pink
+    ],
+    # Eye bag - sama dengan dark_circle
+    "eye_bag": [
+        (130, 150, 255),  # #8296ff - Ringan (score >= 66) - periwinkle
+        (180, 100, 200),  # #b464c8 - Sedang (33-65) - orchid
+        (220, 80, 160),  # #dc50a0 - Berat (< 33) - deep pink
+    ],
+    # Redness - 3 levels (Erythema severity scale)
+    # Reference: Tan J, et al. J Drugs Dermatol. 2017 - Rosacea grading
+    # UV-optimized: Pink/red tones yang kontras dengan cyan
+    "redness": [
+        (255, 150, 170),  # #ff96aa - Kemerahan ringan (score >= 66) - light pink
+        (255, 100, 130),  # #ff6482 - Kemerahan sedang (33-65) - coral
+        (255, 60, 100),  # #ff3c64 - Kemerahan tinggi (< 33) - hot pink/red
+    ],
+    # Firmness - 3 levels (Skin laxity assessment)
+    # Reference: Fabi S, Sundaram H. J Drugs Dermatol. 2014 - Skin quality assessment
+    # UV-optimized: Cyan → peach → pink
+    "firmness": [
+        (100, 220, 240),  # #64dcf0 - Elastisitas baik (score >= 66) - aqua
+        (255, 180, 140),  # #ffb48c - Penurunan ringan (33-65) - peach
+        (255, 100, 140),  # #ff648c - Perlu perhatian (< 33) - coral pink
+    ],
+    # Radiance/Warna kulit - 3 levels
+    # Reference: Jiang ZX, et al. Skin Res Technol. 2016 - Skin radiance measurement
+    # UV-optimized: Light tones → neutral → pink-gray
+    "radiance": [
+        (255, 240, 180),  # #fff0b4 - Area cerah (score >= 66) - cream yellow
+        (200, 180, 200),  # #c8b4c8 - Kusam (33-65) - lavender gray
+        (180, 140, 180),  # #b48cb4 - Sangat kusam (< 33) - dusty pink
+    ],
+    # Texture - 3 levels
+    # UV-optimized: Cyan → purple → magenta
+    "texture": [
+        (120, 200, 255),  # #78c8ff - Tekstur halus (score >= 66) - sky blue
+        (180, 120, 220),  # #b478dc - Tekstur kasar (33-65) - purple
+        (255, 100, 160),  # #ff64a0 - Tekstur sangat kasar (< 33) - hot pink
+    ],
+}
+
+# Threshold untuk menentukan severity level berdasarkan jumlah level
+# Format: list of thresholds, len = num_levels - 1
+SEVERITY_THRESHOLDS = {
+    2: [50],  # 2 levels: >= 50 = level 0, < 50 = level 1
+    3: [66, 33],  # 3 levels: >= 66 = 0, 33-65 = 1, < 33 = 2
+    4: [75, 50, 25],  # 4 levels: >= 75 = 0, 50-74 = 1, 25-49 = 2, < 25 = 3
+}
+
+# Fallback: single color untuk backward compatibility
+# UPDATED: Warna dioptimalkan untuk UV tint (pink/coral tones)
 CONCERN_COLORS = {
-    "oiliness": (255, 204, 0),  # Kuning/Gold
-    "acne": (255, 59, 48),  # Merah
-    "pore": (255, 149, 0),  # Orange
-    "wrinkle": (0, 212, 255),  # Cyan
-    "dark_circle": (94, 92, 230),  # Biru
-    "eye_bag": (88, 86, 214),  # Indigo
-    "age_spot": (162, 132, 94),  # Coklat
-    "redness": (255, 100, 100),  # Merah muda
-    "firmness": (0, 255, 200),  # Teal
-    "radiance": (255, 255, 100),  # Kuning terang
-    "texture": (175, 82, 222),  # Ungu
+    "oiliness": (255, 150, 135),  # Coral - kontras dengan cyan
+    "acne": (255, 110, 130),  # Pink coral
+    "pore": (255, 140, 165),  # Salmon pink
+    "wrinkle": (200, 100, 220),  # Magenta - kontras dengan cyan
+    "dark_circle": (180, 100, 200),  # Orchid
+    "eye_bag": (180, 100, 200),  # Orchid - sama dengan dark_circle
+    "age_spot": (255, 150, 150),  # Salmon - kontras dengan cyan
+    "redness": (255, 100, 130),  # Coral pink
+    "firmness": (255, 140, 165),  # Salmon pink
+    "radiance": (200, 180, 200),  # Lavender gray
+    "texture": (180, 120, 220),  # Purple
 }
+
+
+def get_severity_level(score: float, num_levels: int) -> int:
+    """
+    Hitung severity level berdasarkan score.
+
+    Args:
+        score: Skor dari YouCam API (0-100, higher = healthier)
+        num_levels: Jumlah level severity untuk concern ini
+
+    Returns:
+        Severity level index (0 = least severe, num_levels-1 = most severe)
+
+    Literature basis:
+    - Score >= 66: Mild/minimal (corresponds to Glogau Type I-II, mild acne)
+    - Score 33-65: Moderate (Glogau Type II-III, moderate concerns)
+    - Score < 33: Severe (Glogau Type III-IV, severe issues)
+    """
+    if num_levels not in SEVERITY_THRESHOLDS:
+        return 0  # Default ke level terendah jika tidak ada threshold
+
+    thresholds = SEVERITY_THRESHOLDS[num_levels]
+
+    for i, threshold in enumerate(thresholds):
+        if score >= threshold:
+            return i
+
+    return num_levels - 1  # Level paling severe
+
+
+def get_color_for_severity(concern_key: str, score: float) -> tuple:
+    """
+    Dapatkan warna RGB berdasarkan concern dan score.
+
+    Args:
+        concern_key: Key concern (e.g., 'oiliness', 'acne')
+        score: Skor dari YouCam API (0-100)
+
+    Returns:
+        RGB tuple untuk warna yang sesuai dengan severity
+    """
+    if concern_key not in SEVERITY_COLOR_LEVELS:
+        return CONCERN_COLORS.get(concern_key, (0, 212, 255))
+
+    color_levels = SEVERITY_COLOR_LEVELS[concern_key]
+    num_levels = len(color_levels)
+    severity_level = get_severity_level(score, num_levels)
+
+    return color_levels[severity_level]
+
+
+def calculate_dot_radius(width: int, height: int, severity_level: int, num_levels: int) -> int:
+    """
+    Hitung radius dot berdasarkan ukuran gambar dan severity level.
+
+    Args:
+        width: Lebar gambar dalam pixel
+        height: Tinggi gambar dalam pixel
+        severity_level: Level severity (0 = mild, higher = more severe)
+        num_levels: Total jumlah level untuk concern ini
+
+    Returns:
+        Radius dot dalam pixel
+
+    Formula:
+        base_radius = 0.5% dari dimensi terkecil gambar (min 3px)
+        severity_multiplier = 1.0 (mild) hingga 2.0 (severe)
+    """
+    # Base radius: 0.5% dari dimensi terkecil, minimum 3px
+    base_radius = max(3, int(min(width, height) * 0.005))
+
+    # Severity multiplier: mild=1.0, moderate=1.5, severe=2.0
+    if num_levels <= 1:
+        multiplier = 1.0
+    else:
+        # Linear interpolation dari 1.0 ke 2.0 berdasarkan severity
+        multiplier = 1.0 + (severity_level / (num_levels - 1)) * 1.0
+
+    return int(base_radius * multiplier)
+
+
+def get_dot_alpha(severity_level: int, num_levels: int) -> int:
+    """
+    Hitung alpha (opacity) dot berdasarkan severity level.
+
+    Args:
+        severity_level: Level severity (0 = mild, higher = more severe)
+        num_levels: Total jumlah level untuk concern ini
+
+    Returns:
+        Alpha value (0-255)
+
+    Mapping:
+        - Mild (level 0): alpha 180
+        - Moderate: alpha 210
+        - Severe (max level): alpha 255
+    """
+    if num_levels <= 1:
+        return 220
+
+    # Linear interpolation dari 180 ke 255
+    alpha_range = 255 - 180  # 75
+    alpha = 180 + int((severity_level / (num_levels - 1)) * alpha_range)
+    return min(255, alpha)
+
+
+def draw_severity_dots(
+    draw: ImageDraw.ImageDraw,
+    points: list[tuple[int, int]],
+    color: tuple[int, int, int],
+    width: int,
+    height: int,
+    severity_level: int,
+    num_levels: int,
+    landmarks: np.ndarray | None = None,
+) -> None:
+    """
+    Gambar dots pada titik-titik landmark dengan ukuran berdasarkan severity.
+    DEPRECATED: Gunakan draw_mask_based_visualization untuk hasil yang lebih akurat.
+
+    Args:
+        draw: PIL ImageDraw object
+        points: List of (x, y) koordinat landmark
+        color: RGB tuple warna dot
+        width: Lebar gambar
+        height: Tinggi gambar
+        severity_level: Level severity untuk sizing
+        num_levels: Total jumlah level
+        landmarks: Optional landmarks array untuk exclusion check
+    """
+    radius = calculate_dot_radius(width, height, severity_level, num_levels)
+    alpha = get_dot_alpha(severity_level, num_levels)
+
+    for x, y in points:
+        # Skip jika di excluded zone
+        if landmarks is not None and is_point_in_excluded_zone(x, y, landmarks):
+            continue
+        draw.ellipse(
+            [(x - radius, y - radius), (x + radius, y + radius)],
+            fill=(*color, alpha),
+        )
+
+
+def create_face_region_mask(
+    width: int,
+    height: int,
+    face_bbox: "FaceBoundingBox | None",
+    landmarks: np.ndarray | None = None,
+) -> np.ndarray:
+    """
+    Buat mask untuk membatasi visualisasi ke area wajah saja.
+
+    Args:
+        width: Image width
+        height: Image height
+        face_bbox: Bounding box wajah dari Face Detection
+        landmarks: Optional landmarks untuk membuat convex hull
+
+    Returns:
+        Binary mask (0 = exclude, 1 = include) sebagai float32 array
+    """
+    face_mask = np.zeros((height, width), dtype=np.float32)
+
+    if face_bbox is not None:
+        # Gunakan bounding box dengan soft edge
+        x1, y1 = face_bbox.x, face_bbox.y
+        x2, y2 = face_bbox.x2, face_bbox.y2
+
+        # Clamp to image bounds
+        x1 = max(0, x1)
+        y1 = max(0, y1)
+        x2 = min(width, x2)
+        y2 = min(height, y2)
+
+        # Fill face region
+        face_mask[y1:y2, x1:x2] = 1.0
+
+        # Optional: create soft edge dengan gradient
+        # Ini membuat transisi lebih halus di edge wajah
+        edge_size = int(min(x2 - x1, y2 - y1) * 0.05)
+        if edge_size > 0:
+            # Top edge gradient
+            for i in range(edge_size):
+                alpha = i / edge_size
+                if y1 + i < height:
+                    face_mask[y1 + i, x1:x2] = min(face_mask[y1 + i, x1], alpha)
+            # Bottom edge gradient
+            for i in range(edge_size):
+                alpha = i / edge_size
+                if y2 - i - 1 >= 0:
+                    row_idx = y2 - i - 1
+                    face_mask[row_idx, x1:x2] = np.minimum(
+                        face_mask[row_idx, x1:x2], alpha
+                    )
+
+    elif landmarks is not None:
+        # Fallback: gunakan bounding box dari landmarks (tanpa scipy)
+        try:
+            x_coords = landmarks[:, 0]
+            y_coords = landmarks[:, 1]
+            x_min = max(0, int(np.min(x_coords)))
+            y_min = max(0, int(np.min(y_coords)))
+            x_max = min(width, int(np.max(x_coords)))
+            y_max = min(height, int(np.max(y_coords)))
+
+            # Fill landmark bounding box region
+            face_mask[y_min:y_max, x_min:x_max] = 1.0
+        except Exception:
+            # Jika gagal, fallback ke full image
+            face_mask = np.ones((height, width), dtype=np.float32)
+    else:
+        # Tidak ada face info, gunakan full image
+        face_mask = np.ones((height, width), dtype=np.float32)
+
+    return face_mask
+
+
+def draw_mask_based_visualization(
+    image: Image.Image,
+    mask_bytes: bytes,
+    color: tuple[int, int, int],
+    landmarks: np.ndarray | None = None,
+    face_bbox: "FaceBoundingBox | None" = None,
+    intensity_threshold: int = 50,
+    alpha_multiplier: float = 0.8,
+) -> Image.Image:
+    """
+    Buat visualisasi berdasarkan mask intensity dari YouCam.
+
+    PENTING: Visualisasi HANYA muncul di area wajah (face_bbox).
+    Area di luar wajah (background, tembok, dll) tidak akan ditampilkan.
+
+    Args:
+        image: PIL Image (RGBA) untuk di-overlay
+        mask_bytes: PNG bytes dari YouCam mask
+        color: RGB tuple warna overlay
+        landmarks: Optional landmarks untuk exclusion zone check
+        face_bbox: Bounding box wajah untuk membatasi area visualisasi
+        intensity_threshold: Minimum mask intensity untuk ditampilkan
+        alpha_multiplier: Multiplier untuk alpha channel
+
+    Returns:
+        PIL Image dengan mask overlay (hanya di area wajah)
+    """
+    width, height = image.size
+
+    # Load mask
+    mask_img = Image.open(io.BytesIO(mask_bytes))
+    if mask_img.size != (width, height):
+        mask_img = mask_img.resize((width, height), Image.Resampling.LANCZOS)
+
+    # Convert ke grayscale untuk intensity
+    if mask_img.mode != "L":
+        if mask_img.mode == "RGBA":
+            mask_intensity = mask_img.split()[3]
+        else:
+            mask_intensity = mask_img.convert("L")
+    else:
+        mask_intensity = mask_img
+
+    mask_array = np.array(mask_intensity, dtype=np.float32)
+
+    # Apply threshold - hanya tampilkan area dengan intensity tinggi
+    mask_array[mask_array < intensity_threshold] = 0
+
+    # =========================================================================
+    # FACE REGION MASK - Batasi visualisasi ke area wajah saja
+    # Ini mencegah dots/overlay muncul di background/tembok
+    # =========================================================================
+    face_region_mask = create_face_region_mask(width, height, face_bbox, landmarks)
+    mask_array = mask_array * face_region_mask
+
+    # Create exclusion mask untuk mata, mulut, alis
+    if landmarks is not None:
+        exclusion_mask = np.ones((height, width), dtype=np.float32)
+        for idx in EXCLUDED_LANDMARK_INDICES:
+            if idx < len(landmarks):
+                cx, cy = int(landmarks[idx][0]), int(landmarks[idx][1])
+                # Radius exclusion berdasarkan ukuran gambar
+                exclusion_radius = int(min(width, height) * 0.03)
+                y_indices, x_indices = np.ogrid[:height, :width]
+                dist = np.sqrt((x_indices - cx) ** 2 + (y_indices - cy) ** 2)
+                exclusion_mask[dist < exclusion_radius] = 0
+
+        # Apply exclusion
+        mask_array = mask_array * exclusion_mask
+
+    # Create colored overlay
+    overlay = Image.new("RGBA", (width, height), (*color, 0))
+
+    # Alpha = mask intensity * multiplier
+    alpha_array = (mask_array * alpha_multiplier).clip(0, 255).astype(np.uint8)
+    overlay.putalpha(Image.fromarray(alpha_array))
+
+    # Composite
+    result = Image.alpha_composite(image, overlay)
+
+    return result
+
+
+def draw_filled_zone_overlay(
+    draw: ImageDraw.ImageDraw,
+    points: list[tuple[int, int]],
+    color: tuple[int, int, int],
+    alpha: int = 100,
+) -> None:
+    """
+    Gambar filled polygon untuk zone overlay (boundary style yang benar).
+
+    Untuk redness, firmness, radiance - gunakan filled area, BUKAN mesh lines.
+
+    Args:
+        draw: PIL ImageDraw object
+        points: List of (x, y) koordinat untuk polygon
+        color: RGB tuple warna
+        alpha: Opacity (0-255)
+    """
+    if len(points) < 3:
+        return
+
+    # Draw filled polygon dengan outline subtle
+    draw.polygon(points, fill=(*color, alpha), outline=(*color, min(255, alpha + 50)))
+
+
+def get_heatmap_color_for_zone(zone_type: str, score: float) -> tuple[int, int, int]:
+    """
+    Dapatkan warna heatmap berdasarkan zona dan score.
+
+    Args:
+        zone_type: "t_zone" atau "u_zone"
+        score: Skor dari YouCam API (0-100, higher = healthier/less oily)
+
+    Returns:
+        RGB tuple untuk warna zona
+    """
+    zone_colors = HEATMAP_ZONE_COLORS.get(zone_type, HEATMAP_ZONE_COLORS["t_zone"])
+
+    # Score tinggi = kurang berminyak (sehat), score rendah = berminyak
+    if score >= 66:
+        return zone_colors["low_sebum"]
+    elif score >= 33:
+        return zone_colors["mid_sebum"]
+    else:
+        return zone_colors["high_sebum"]
+
+
+def draw_heatmap_zone(
+    draw: ImageDraw.ImageDraw,
+    points: list[tuple[int, int]],
+    zone_type: str,
+    score: float,
+    width: int,
+    height: int,
+) -> None:
+    """
+    Gambar heatmap zone dengan filled polygon berdasarkan zona dan severity.
+
+    Visualisasi untuk oiliness (sebum):
+    - T-zone (forehead, nose, chin): Warm colors (red/orange/yellow)
+    - U-zone (cheeks): Cool colors (purple/blue/teal)
+
+    Research: Jung IS et al. Ann Dermatol 2019
+    - T-zone sebum baseline: 80.6±39.1 a.u.
+    - U-zone sebum baseline: 42.7±29.3 a.u.
+
+    Args:
+        draw: PIL ImageDraw object
+        points: List of (x, y) koordinat landmark polygon
+        zone_type: "t_zone" atau "u_zone"
+        score: Skor oiliness (0-100, higher = less oily)
+        width: Lebar gambar
+        height: Tinggi gambar
+    """
+    if len(points) < 3:
+        return
+
+    # Dapatkan warna berdasarkan zona dan score
+    color = get_heatmap_color_for_zone(zone_type, score)
+
+    # Alpha berdasarkan severity (lebih berminyak = lebih opaque)
+    if score >= 66:
+        alpha = 70  # Ringan - semi-transparan
+    elif score >= 33:
+        alpha = 100  # Sedang
+    else:
+        alpha = 140  # Tinggi - lebih solid
+
+    # T-zone sedikit lebih intens karena naturally lebih berminyak
+    if zone_type == "t_zone":
+        alpha = min(200, alpha + 20)
+
+    # Draw filled polygon dengan outline subtle
+    # Tidak ada dots tambahan - hanya filled area untuk clarity
+    draw.polygon(points, fill=(*color, alpha), outline=(*color, min(255, alpha + 40)))
 
 
 class LandmarkService:
     """Service untuk deteksi landmark wajah menggunakan MediaPipe"""
 
     def __init__(self):
+        # Face Detection - untuk mendapatkan bounding box wajah
+        self.mp_face_detection = mp.solutions.face_detection
+        self.face_detection = self.mp_face_detection.FaceDetection(
+            model_selection=1,  # 1 = full range model (better for various distances)
+            min_detection_confidence=0.5,
+        )
+
+        # Face Mesh - untuk mendapatkan 468 landmark
         self.mp_face_mesh = mp.solutions.face_mesh
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             static_image_mode=True,
@@ -331,15 +973,62 @@ class LandmarkService:
             min_tracking_confidence=0.5,
         )
 
+    def detect_face_bbox(
+        self, image: np.ndarray, width: int, height: int
+    ) -> FaceBoundingBox | None:
+        """
+        Deteksi bounding box wajah menggunakan MediaPipe Face Detection.
+
+        Args:
+            image: RGB numpy array
+            width: Image width
+            height: Image height
+
+        Returns:
+            FaceBoundingBox atau None jika tidak terdeteksi
+        """
+        try:
+            results = self.face_detection.process(image)
+
+            if not results.detections:
+                return None
+
+            # Ambil deteksi pertama (wajah utama)
+            detection = results.detections[0]
+            bbox = detection.location_data.relative_bounding_box
+
+            # Convert relative coords ke pixel coords dengan margin
+            # Tambah margin 10% untuk memastikan seluruh wajah tercakup
+            margin = 0.1
+            x = max(0, int((bbox.xmin - margin) * width))
+            y = max(0, int((bbox.ymin - margin) * height))
+            w = min(width - x, int((bbox.width + 2 * margin) * width))
+            h = min(height - y, int((bbox.height + 2 * margin) * height))
+
+            return FaceBoundingBox(
+                x=x,
+                y=y,
+                width=w,
+                height=h,
+                confidence=detection.score[0] if detection.score else 0.0,
+            )
+
+        except Exception:
+            return None
+
     def detect_landmarks(self, image_bytes: bytes) -> LandmarkResult:
         """
-        Deteksi landmark dari image bytes
+        Deteksi landmark dari image bytes dengan face detection pipeline.
+
+        Pipeline:
+        1. Face Detection - dapatkan bounding box wajah
+        2. Face Mesh - deteksi 468 landmark dalam area wajah
 
         Args:
             image_bytes: Raw image bytes (JPEG/PNG)
 
         Returns:
-            LandmarkResult dengan status dan data landmark
+            LandmarkResult dengan status, landmark, dan face bounding box
         """
         try:
             # Convert bytes ke numpy array
@@ -355,12 +1044,17 @@ class LandmarkService:
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             height, width = image.shape[:2]
 
-            # Process dengan MediaPipe
+            # Step 1: Face Detection - dapatkan bounding box
+            face_bbox = self.detect_face_bbox(image_rgb, width, height)
+
+            # Step 2: Face Mesh - deteksi landmark
             results = self.face_mesh.process(image_rgb)
 
             if not results.multi_face_landmarks:
                 return LandmarkResult(
-                    status=LandmarkStatus.FAILED, error_message="Wajah tidak terdeteksi"
+                    status=LandmarkStatus.FAILED,
+                    error_message="Wajah tidak terdeteksi",
+                    face_bbox=face_bbox,  # Mungkin masih ada bbox meski mesh gagal
                 )
 
             # Ambil landmark pertama (face pertama)
@@ -371,11 +1065,32 @@ class LandmarkService:
                 [[lm.x * width, lm.y * height, lm.z * width] for lm in face_landmarks.landmark]
             )
 
-            # Hitung confidence (rata-rata visibility jika tersedia)
+            # Jika face_bbox tidak terdeteksi, buat dari landmarks
+            if face_bbox is None:
+                # Fallback: buat bbox dari landmark extremes
+                x_coords = landmarks[:, 0]
+                y_coords = landmarks[:, 1]
+                margin = 0.1
+                x_min = max(0, int(np.min(x_coords) - width * margin))
+                y_min = max(0, int(np.min(y_coords) - height * margin))
+                x_max = min(width, int(np.max(x_coords) + width * margin))
+                y_max = min(height, int(np.max(y_coords) + height * margin))
+                face_bbox = FaceBoundingBox(
+                    x=x_min,
+                    y=y_min,
+                    width=x_max - x_min,
+                    height=y_max - y_min,
+                    confidence=0.7,  # Lower confidence for fallback
+                )
+
+            # Hitung confidence
             confidence = 0.85  # Default confidence untuk static image
 
             return LandmarkResult(
-                status=LandmarkStatus.SUCCESS, landmarks=landmarks, confidence=confidence
+                status=LandmarkStatus.SUCCESS,
+                landmarks=landmarks,
+                confidence=confidence,
+                face_bbox=face_bbox,
             )
 
         except Exception as e:
@@ -389,21 +1104,43 @@ class LandmarkService:
         concern_key: str,
         mask_bytes: bytes | None = None,
         style: str = "canny",
+        score: float | None = None,
     ) -> tuple[bytes, dict]:
         """
-        Buat visualisasi zona untuk concern tertentu
+        Buat visualisasi zona untuk concern tertentu dengan severity-based colors.
 
         Args:
             image_bytes: Original image bytes
             concern_key: Key concern (e.g., 'oiliness', 'acne')
             mask_bytes: Optional mask dari YouCam untuk intensity
             style: 'canny' untuk outline, 'filled' untuk filled polygon
+            score: Optional score dari YouCam API (0-100) untuk menentukan severity color
 
         Returns:
             Tuple of (visualization_bytes, status_dict)
+
+        Color Selection Logic (based on dermatological literature):
+            - If score provided: Use severity-based color from SEVERITY_COLOR_LEVELS
+            - If no score: Fall back to default CONCERN_COLORS
+
+        References:
+            - Glogau Scale for photoaging (wrinkles)
+            - Global Acne Grading System (acne)
+            - Baumann Skin Typing System (oiliness)
+            - Clinical pore assessment scales
         """
         # Deteksi landmark
         landmark_result = self.detect_landmarks(image_bytes)
+
+        # Determine color based on score (severity-based) or fallback
+        if score is not None:
+            color = get_color_for_severity(concern_key, score)
+            severity_level = get_severity_level(
+                score, len(SEVERITY_COLOR_LEVELS.get(concern_key, [None]))
+            )
+        else:
+            color = CONCERN_COLORS.get(concern_key, (0, 212, 255))
+            severity_level = None
 
         status = {
             "landmark_status": landmark_result.status.value,
@@ -411,70 +1148,149 @@ class LandmarkService:
             "confidence": landmark_result.confidence,
             "fallback_used": False,
             "visualization_source": "none",
+            "severity_level": severity_level,
+            "score_used": score,
+            "color_rgb": color,
         }
 
         # Load original image
         original = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
         width, height = original.size
 
+        # Apply UV tint untuk efek analisis profesional (cyan/teal base)
+        original_with_uv = _apply_uv_tint(original)
+
         if landmark_result.status == LandmarkStatus.FAILED:
-            # Fallback: gunakan mask saja jika ada
+            # Fallback: gunakan mask saja jika ada (dengan UV tint)
+            # face_bbox mungkin masih tersedia meski face mesh gagal
+            fallback_bbox = landmark_result.face_bbox
             if mask_bytes:
                 status["fallback_used"] = True
                 status["visualization_source"] = "mask_only"
-                return self._apply_mask_only(original, mask_bytes, concern_key), status
+                status["face_bbox_detected"] = fallback_bbox is not None
+                return self._apply_mask_only(
+                    original_with_uv, mask_bytes, concern_key, score, fallback_bbox
+                ), status
             else:
-                # Return original dengan status failed
+                # Return UV-tinted image dengan status failed
                 output = io.BytesIO()
-                original.convert("RGB").save(output, format="JPEG", quality=95)
+                original_with_uv.convert("RGB").save(output, format="JPEG", quality=95)
                 return output.getvalue(), status
 
         # Success: buat visualisasi dengan landmark
         landmarks = landmark_result.landmarks
+        face_bbox = landmark_result.face_bbox  # Bounding box untuk constraint
         status["visualization_source"] = "mediapipe"
+        status["face_bbox_detected"] = face_bbox is not None
 
-        # Buat overlay layer
-        overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(overlay)
+        # Tentukan visualization style berdasarkan concern type
+        viz_style = VISUALIZATION_STYLE_MAPPING.get(concern_key, "boundary")
+        current_severity = severity_level if severity_level is not None else 0
 
-        # Dapatkan zona untuk concern ini
-        zones = CONCERN_ZONE_MAPPING.get(concern_key, ["left_cheek", "right_cheek"])
-        color = CONCERN_COLORS.get(concern_key, (0, 212, 255))
+        # =====================================================================
+        # MASK-BASED VISUALIZATION untuk dots style (acne, pore, age_spot)
+        # Prioritas: Gunakan mask dari YouCam jika tersedia
+        # PENTING: face_bbox membatasi visualisasi ke area wajah saja
+        # =====================================================================
+        if viz_style == "dots" and mask_bytes:
+            # Gunakan mask-based visualization - BUKAN dots di semua landmarks
+            # Ini mempertegas hasil YouCam yang sudah ada
+            result = draw_mask_based_visualization(
+                image=original_with_uv,
+                mask_bytes=mask_bytes,
+                color=color,
+                landmarks=landmarks,
+                face_bbox=face_bbox,  # Constraint ke area wajah
+                intensity_threshold=40,  # Hanya tampilkan area dengan concern
+                alpha_multiplier=0.7,
+            )
+            status["visualization_source"] = "mask_based"
 
-        # Gambar setiap zona
-        for zone_name in zones:
-            zone_indices = self._get_zone_indices(zone_name)
-            if not zone_indices:
-                continue
+        # =====================================================================
+        # HEATMAP VISUALIZATION untuk oiliness (T-zone vs U-zone)
+        # =====================================================================
+        elif viz_style == "heatmap":
+            overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(overlay)
 
-            # Ambil koordinat landmark untuk zona ini
-            points = []
-            for idx in zone_indices:
-                if idx < len(landmarks):
-                    x, y = landmarks[idx][0], landmarks[idx][1]
-                    points.append((int(x), int(y)))
+            zones = CONCERN_ZONE_MAPPING.get(concern_key, ["t_zone", "u_zone"])
+            for zone_name in zones:
+                zone_indices = self._get_zone_indices(zone_name)
+                if not zone_indices:
+                    continue
 
-            if len(points) < 3:
-                continue
+                points = []
+                for idx in zone_indices:
+                    if idx < len(landmarks) and not is_excluded_landmark(idx):
+                        x, y = landmarks[idx][0], landmarks[idx][1]
+                        points.append((int(x), int(y)))
 
-            if style == "canny":
-                # Canny style: outline dengan dots
-                # Draw outline
-                draw.line(points + [points[0]], fill=(*color, 200), width=2)
+                if len(points) < 3:
+                    continue
 
-                # Draw dots pada setiap landmark
-                for x, y in points:
-                    draw.ellipse([(x - 2, y - 2), (x + 2, y + 2)], fill=(*color, 255))
+                # Determine zone type
+                if zone_name in ["t_zone", "forehead", "nose", "chin"]:
+                    zone_type = "t_zone"
+                else:
+                    zone_type = "u_zone"
+
+                heatmap_score = score if score is not None else 50.0
+                draw_heatmap_zone(
+                    draw=draw,
+                    points=points,
+                    zone_type=zone_type,
+                    score=heatmap_score,
+                    width=width,
+                    height=height,
+                )
+
+            result = Image.alpha_composite(original_with_uv, overlay)
+            status["visualization_source"] = "heatmap_zones"
+
+        # =====================================================================
+        # BOUNDARY/FILLED VISUALIZATION untuk redness, wrinkle, firmness, etc.
+        # Gunakan mask overlay jika tersedia, atau filled polygon
+        # PENTING: face_bbox membatasi visualisasi ke area wajah saja
+        # =====================================================================
+        else:
+            if mask_bytes:
+                # Mask-based overlay untuk area concerns
+                result = draw_mask_based_visualization(
+                    image=original_with_uv,
+                    mask_bytes=mask_bytes,
+                    color=color,
+                    landmarks=landmarks,
+                    face_bbox=face_bbox,  # Constraint ke area wajah
+                    intensity_threshold=30,
+                    alpha_multiplier=0.6,
+                )
+                status["visualization_source"] = "mask_overlay"
             else:
-                # Filled style: polygon semi-transparan
-                draw.polygon(points, fill=(*color, 60), outline=(*color, 180))
+                # Fallback: filled polygon berdasarkan zones
+                overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+                draw = ImageDraw.Draw(overlay)
 
-        # Tambahkan intensity dots jika ada mask
-        if mask_bytes:
-            overlay = self._add_intensity_dots(overlay, mask_bytes, landmarks, color)
+                zones = CONCERN_ZONE_MAPPING.get(concern_key, ["left_cheek", "right_cheek"])
+                for zone_name in zones:
+                    zone_indices = self._get_zone_indices(zone_name)
+                    if not zone_indices:
+                        continue
 
-        # Composite overlay dengan original
-        result = Image.alpha_composite(original, overlay)
+                    points = []
+                    for idx in zone_indices:
+                        if idx < len(landmarks) and not is_excluded_landmark(idx):
+                            x, y = landmarks[idx][0], landmarks[idx][1]
+                            points.append((int(x), int(y)))
+
+                    if len(points) < 3:
+                        continue
+
+                    # Alpha berdasarkan severity
+                    alpha = 60 + (current_severity * 30)
+                    draw_filled_zone_overlay(draw, points, color, alpha)
+
+                result = Image.alpha_composite(original_with_uv, overlay)
+                status["visualization_source"] = "zone_polygon"
 
         # Convert ke JPEG
         output = io.BytesIO()
@@ -499,10 +1315,22 @@ class LandmarkService:
                 return sub_zones
         return []
 
-    def _apply_mask_only(self, original: Image.Image, mask_bytes: bytes, concern_key: str) -> bytes:
-        """Fallback: apply mask tanpa landmark (enhanced visibility)"""
+    def _apply_mask_only(
+        self,
+        original: Image.Image,
+        mask_bytes: bytes,
+        concern_key: str,
+        score: float | None = None,
+        face_bbox: FaceBoundingBox | None = None,
+    ) -> bytes:
+        """Fallback: apply mask tanpa landmark dengan face region constraint"""
         width, height = original.size
-        color = CONCERN_COLORS.get(concern_key, (0, 212, 255))
+
+        # Use severity-based color if score provided
+        if score is not None:
+            color = get_color_for_severity(concern_key, score)
+        else:
+            color = CONCERN_COLORS.get(concern_key, (0, 212, 255))
 
         # Load mask
         mask_img = Image.open(io.BytesIO(mask_bytes))
@@ -513,14 +1341,18 @@ class LandmarkService:
         if mask_img.mode != "L":
             mask_img = mask_img.convert("L")
 
+        # Use mask as alpha, enhanced
+        mask_array = np.array(mask_img, dtype=np.float32)
+        mask_enhanced = np.clip(mask_array * 1.5, 0, 255)
+
+        # Apply face region constraint jika ada
+        if face_bbox is not None:
+            face_region_mask = create_face_region_mask(width, height, face_bbox, None)
+            mask_enhanced = mask_enhanced * face_region_mask
+
         # Create colored overlay dengan enhanced alpha
         overlay = Image.new("RGBA", (width, height), (*color, 0))
-
-        # Use mask as alpha, enhanced
-        mask_array = np.array(mask_img)
-        mask_enhanced = np.clip(mask_array * 1.5, 0, 255).astype(np.uint8)
-
-        overlay.putalpha(Image.fromarray(mask_enhanced))
+        overlay.putalpha(Image.fromarray(mask_enhanced.astype(np.uint8)))
 
         # Composite
         result = Image.alpha_composite(original, overlay)
@@ -532,9 +1364,12 @@ class LandmarkService:
     def _add_intensity_dots(
         self, overlay: Image.Image, mask_bytes: bytes, landmarks: np.ndarray, color: tuple
     ) -> Image.Image:
-        """Tambahkan intensity dots berdasarkan mask"""
+        """Tambahkan intensity dots berdasarkan mask dengan dynamic sizing."""
         draw = ImageDraw.Draw(overlay)
         width, height = overlay.size
+
+        # Base radius berdasarkan ukuran gambar (konsisten dengan draw_severity_dots)
+        base_radius = max(2, int(min(width, height) * 0.004))
 
         try:
             # Load mask
@@ -550,8 +1385,9 @@ class LandmarkService:
                 if 0 <= x < width and 0 <= y < height:
                     intensity = mask_array[y, x]
                     if intensity > 30:  # Threshold
-                        # Ukuran dot berdasarkan intensity
-                        radius = max(2, int(intensity / 50))
+                        # Ukuran dot berdasarkan intensity (scaled by base_radius)
+                        intensity_multiplier = 1.0 + (intensity / 255.0)
+                        radius = max(base_radius, int(base_radius * intensity_multiplier))
                         alpha = min(255, intensity + 100)
                         draw.ellipse(
                             [(x - radius, y - radius), (x + radius, y + radius)],
@@ -566,16 +1402,23 @@ class LandmarkService:
         self,
         image_bytes: bytes,
         masks: dict[str, bytes],
+        scores: dict | None = None,
     ) -> tuple[dict[str, bytes], dict[str, dict]]:
         """
-        Buat visualisasi untuk semua concern
+        Buat visualisasi untuk semua concern dengan severity-based colors.
 
         Args:
             image_bytes: Original image bytes
             masks: Dictionary of mask_name -> PNG bytes
+            scores: Optional dictionary of scores from YouCam API for severity coloring
+                    Format: {"oiliness": {"ui_score": 45.2}, "acne": {"ui_score": 72.1}, ...}
 
         Returns:
             Tuple of (visualizations_dict, statuses_dict)
+
+        The scores parameter enables severity-based color visualization:
+        - When scores provided: Colors are selected based on severity thresholds
+        - When scores not provided: Falls back to default single-color visualization
         """
         visualizations = {}
         statuses = {}
@@ -590,8 +1433,26 @@ class LandmarkService:
                     mask_bytes = mask_data
                     break
 
+            # Extract score for this concern if available
+            concern_score = None
+            if scores:
+                score_data = scores.get(concern_key)
+                if score_data:
+                    # Handle different score formats
+                    if isinstance(score_data, dict):
+                        concern_score = score_data.get("ui_score") or score_data.get("raw_score")
+                        # Handle nested 'whole' structure
+                        if concern_score is None and "whole" in score_data:
+                            concern_score = score_data["whole"].get("ui_score")
+                    elif isinstance(score_data, (int, float)):
+                        concern_score = float(score_data)
+
             viz_bytes, status = self.create_zone_visualization(
-                image_bytes, concern_key, mask_bytes=mask_bytes, style="canny"
+                image_bytes,
+                concern_key,
+                mask_bytes=mask_bytes,
+                style="canny",
+                score=concern_score,
             )
 
             visualizations[concern_key] = viz_bytes

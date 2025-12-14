@@ -49,6 +49,52 @@
     white-space: nowrap;
 }
 
+/* Active legend item - currently detected severity level */
+.legend-item.legend-active {
+    background: rgba(0, 212, 255, 0.25);
+    border-color: rgba(0, 212, 255, 0.5);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
+}
+
+.legend-item.legend-active .legend-color {
+    box-shadow: 0 0 12px currentColor, 0 0 4px currentColor;
+    transform: scale(1.1);
+}
+
+.legend-item.legend-active .legend-label {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Active indicator dot */
+.legend-indicator {
+    color: #00d4ff;
+    font-size: 0.5rem;
+    margin-left: auto;
+    animation: pulse-indicator 2s ease-in-out infinite;
+}
+
+@keyframes pulse-indicator {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* Inactive legend item - dimmed appearance */
+.legend-item.legend-inactive {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.05);
+    opacity: 0.5;
+}
+
+.legend-item.legend-inactive .legend-color {
+    box-shadow: none;
+    filter: grayscale(40%);
+}
+
+.legend-item.legend-inactive .legend-label {
+    color: rgba(255, 255, 255, 0.5);
+}
+
 /* Score Section */
 .concern-score-section {
     padding: 1.5rem;

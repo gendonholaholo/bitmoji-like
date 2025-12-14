@@ -34,14 +34,15 @@ def create_composite_visualization(
     overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
 
     # Priority masks to overlay (in order of visibility)
+    # UPDATED: Warna dioptimalkan untuk UV tint cyan/teal background
     mask_priorities = [
-        ("acne", (255, 59, 48, 180)),  # Red - high visibility
-        ("pore", (255, 149, 0, 150)),  # Orange
-        ("wrinkle", (255, 204, 0, 140)),  # Yellow
-        ("texture", (175, 82, 222, 130)),  # Purple
-        ("age_spot", (162, 132, 94, 150)),  # Brown
-        ("eye_bag", (88, 86, 214, 140)),  # Indigo
-        ("dark_circle", (94, 92, 230, 140)),  # Blue
+        ("acne", (255, 110, 130, 180)),  # Pink coral - high visibility
+        ("pore", (255, 140, 165, 150)),  # Salmon pink
+        ("wrinkle", (200, 100, 220, 140)),  # Magenta
+        ("texture", (180, 120, 220, 130)),  # Purple
+        ("age_spot", (255, 150, 150, 150)),  # Salmon
+        ("eye_bag", (180, 100, 200, 140)),  # Orchid
+        ("dark_circle", (180, 100, 200, 140)),  # Orchid
     ]
 
     # Apply each mask with appropriate color
@@ -130,19 +131,21 @@ def create_simple_composite(
 
 
 # Color configuration for each concern type
+# UPDATED: Warna dioptimalkan untuk UV tint cyan/teal background
+# Menggunakan pink/coral/magenta yang kontras dengan background cyan
 CONCERN_COLORS = {
-    "acne": (255, 59, 48, 180),  # Red
-    "pore": (255, 149, 0, 160),  # Orange
-    "wrinkle": (0, 212, 255, 150),  # Cyan
-    "texture": (175, 82, 222, 140),  # Purple
-    "age_spot": (255, 204, 0, 160),  # Yellow/Gold
-    "eye_bag": (88, 86, 214, 150),  # Indigo
-    "dark_circle": (94, 92, 230, 150),  # Blue
-    "oiliness": (255, 215, 0, 140),  # Gold
-    "redness": (255, 100, 100, 160),  # Light red
-    "firmness": (0, 255, 200, 130),  # Teal
-    "radiance": (255, 255, 100, 130),  # Light yellow
-    "moisture": (100, 200, 255, 130),  # Light blue
+    "acne": (255, 110, 130, 180),  # Pink coral - kontras dengan cyan
+    "pore": (255, 140, 165, 160),  # Salmon pink
+    "wrinkle": (200, 100, 220, 150),  # Magenta
+    "texture": (180, 120, 220, 140),  # Purple
+    "age_spot": (255, 150, 150, 160),  # Salmon
+    "eye_bag": (180, 100, 200, 150),  # Orchid
+    "dark_circle": (180, 100, 200, 150),  # Orchid
+    "oiliness": (255, 150, 135, 140),  # Coral
+    "redness": (255, 100, 130, 160),  # Coral pink
+    "firmness": (255, 140, 165, 130),  # Salmon pink
+    "radiance": (200, 180, 200, 130),  # Lavender gray
+    "moisture": (130, 150, 255, 130),  # Periwinkle
 }
 
 
@@ -269,25 +272,40 @@ def create_all_concern_overlays(
 def create_landmark_enhanced_overlays(
     original_image_bytes: bytes,
     masks: dict[str, bytes],
+    scores: dict | None = None,
 ) -> tuple[dict[str, bytes], dict[str, dict]]:
     """
-    Create landmark-enhanced overlay images for all concerns.
+    Create landmark-enhanced overlay images for all concerns with severity-based colors.
 
     Menggunakan MediaPipe Face Mesh untuk menambahkan:
     - Zone boundaries (polygon outlines)
     - Landmark dots
     - Canny-style mesh visualization
+    - Severity-based coloring based on scores
 
     Args:
         original_image_bytes: Original uploaded image
         masks: Dictionary of mask_name -> PNG bytes
+        scores: Optional dictionary of scores from YouCam API for severity coloring
+                Format: {"oiliness": {"ui_score": 45.2}, ...}
 
     Returns:
         Tuple of:
         - Dictionary of concern_key -> JPEG image bytes
-        - Dictionary of concern_key -> status dict (landmark_status, etc.)
+        - Dictionary of concern_key -> status dict (landmark_status, severity_level, etc.)
+
+    Color Selection (based on dermatological literature):
+        - High score (>=66): Mild severity color
+        - Mid score (33-65): Moderate severity color
+        - Low score (<33): Severe severity color
+
+    References:
+        - Glogau Scale for photoaging (wrinkles)
+        - Global Acne Grading System (acne)
+        - Baumann Skin Typing System (oiliness)
+        - Clinical pore assessment scales
     """
     from app.services.landmark_service import get_landmark_service
 
     service = get_landmark_service()
-    return service.create_all_zone_visualizations(original_image_bytes, masks)
+    return service.create_all_zone_visualizations(original_image_bytes, masks, scores)

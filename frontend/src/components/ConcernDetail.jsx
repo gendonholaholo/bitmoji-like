@@ -5,52 +5,92 @@ import ImageComparisonSlider from './ImageComparisonSlider';
 import './ConcernDetail.css';
 
 // Marker color legend configuration
+// UPDATED: Warna dioptimalkan untuk UV tint cyan/teal (sinkron dengan backend)
+// Menggunakan pink/coral/magenta yang kontras dengan background cyan
 const MARKER_LEGENDS = {
     acne: [
-        { color: '#ff3b30', label: 'Jerawat aktif' },
-        { color: '#ff9500', label: 'Area meradang' },
-        { color: '#ffcc00', label: 'Bekas jerawat' },
+        { color: '#ffc8b4', label: 'Bekas jerawat' },      // Light peach (mild)
+        { color: '#ff8ca0', label: 'Area meradang' },      // Salmon pink (moderate)
+        { color: '#ff5064', label: 'Jerawat aktif' },      // Coral red (severe)
     ],
     pore: [
-        { color: '#00d4ff', label: 'Pori tersumbat' },
-        { color: '#ff9500', label: 'Pori membesar' },
-        { color: '#ffcc00', label: 'Area berminyak' },
+        { color: '#78dcff', label: 'Pori tersumbat' },     // Light cyan (mild)
+        { color: '#ffb48c', label: 'Pori membesar' },      // Peach (moderate)
+        { color: '#ff6482', label: 'Area berminyak' },     // Coral pink (severe)
     ],
     wrinkle: [
-        { color: '#00d4ff', label: 'Garis halus' },
-        { color: '#a855f7', label: 'Kerutan sedang' },
-        { color: '#ef4444', label: 'Kerutan dalam' },
+        { color: '#64c8ff', label: 'Garis halus' },        // Sky blue (mild)
+        { color: '#c864dc', label: 'Kerutan sedang' },     // Magenta (moderate)
+        { color: '#ff5078', label: 'Kerutan dalam' },      // Hot pink (severe)
     ],
     age_spot: [
-        { color: '#00d4ff', label: 'Titik lain' },
-        { color: '#ff9500', label: 'Bintik-bintik' },
-        { color: '#8b5a2b', label: 'Melasma' },
-        { color: '#a0522d', label: 'Bintik-bintik dewasa' },
+        { color: '#8cdcff', label: 'Titik ringan' },       // Light cyan (mild)
+        { color: '#ffb496', label: 'Bintik-bintik' },      // Peach (moderate-mild)
+        { color: '#ff8282', label: 'Melasma' },            // Salmon (moderate)
+        { color: '#ff5a78', label: 'Bintik dewasa' },      // Coral pink (severe)
     ],
     dark_circle_v2: [
-        { color: '#5c5cff', label: 'Vaskular' },
-        { color: '#8b4513', label: 'Pigmentasi' },
-        { color: '#808080', label: 'Struktural' },
+        { color: '#8296ff', label: 'Vaskular' },           // Periwinkle (mild)
+        { color: '#b464c8', label: 'Pigmentasi' },         // Orchid (moderate)
+        { color: '#dc50a0', label: 'Struktural' },         // Deep pink (severe)
     ],
     oiliness: [
-        { color: '#ffcc00', label: 'Zona berminyak' },
-        { color: '#ff9500', label: 'Sangat berminyak' },
+        // Heatmap style: T-zone (warm colors) vs U-zone (cool colors)
+        // Research: T-zone sebum ~80.6 a.u., U-zone ~42.7 a.u. (Jung IS et al. 2019)
+        { color: '#ffc864', label: 'T-zone normal' },          // Yellow - score >= 66
+        { color: '#ff8c50', label: 'T-zone berminyak' },       // Orange - 33-65
+        { color: '#ff5050', label: 'T-zone sangat berminyak' }, // Red - score < 33
     ],
     redness: [
-        { color: '#ff6b6b', label: 'Kemerahan ringan' },
-        { color: '#ef4444', label: 'Kemerahan sedang' },
-        { color: '#dc2626', label: 'Kemerahan tinggi' },
+        { color: '#ff96aa', label: 'Kemerahan ringan' },   // Light pink (mild)
+        { color: '#ff6482', label: 'Kemerahan sedang' },   // Coral (moderate)
+        { color: '#ff3c64', label: 'Kemerahan tinggi' },   // Hot pink/red (severe)
     ],
     firmness: [
-        { color: '#00d4ff', label: 'Elastisitas baik' },
-        { color: '#f59e0b', label: 'Penurunan ringan' },
-        { color: '#ef4444', label: 'Perlu perhatian' },
+        { color: '#64dcf0', label: 'Elastisitas baik' },   // Aqua (mild)
+        { color: '#ffb48c', label: 'Penurunan ringan' },   // Peach (moderate)
+        { color: '#ff648c', label: 'Perlu perhatian' },    // Coral pink (severe)
     ],
     radiance: [
-        { color: '#ffd700', label: 'Area cerah' },
-        { color: '#c0c0c0', label: 'Kusam' },
-        { color: '#808080', label: 'Sangat kusam' },
+        { color: '#fff0b4', label: 'Area cerah' },         // Cream yellow (mild)
+        { color: '#c8b4c8', label: 'Kusam' },              // Lavender gray (moderate)
+        { color: '#b48cb4', label: 'Sangat kusam' },       // Dusty pink (severe)
     ],
+};
+
+/**
+ * Severity thresholds synchronized with backend (landmark_service.py)
+ * Based on dermatological literature:
+ * - Glogau Scale (wrinkles)
+ * - Global Acne Grading System
+ * - Baumann Skin Typing System (oiliness)
+ *
+ * Higher score = better skin condition = milder severity
+ */
+const SEVERITY_THRESHOLDS = {
+    2: [50],           // 2 levels: >= 50 = level 0 (mild), < 50 = level 1 (severe)
+    3: [66, 33],       // 3 levels: >= 66 = 0, 33-65 = 1, < 33 = 2
+    4: [75, 50, 25],   // 4 levels: >= 75 = 0, 50-74 = 1, 25-49 = 2, < 25 = 3
+};
+
+/**
+ * Get active severity level index based on score
+ * @param {number} score - UI score from YouCam API (0-100, higher = better)
+ * @param {number} numLevels - Number of severity levels for this concern
+ * @returns {number} Active level index (0 = mildest, numLevels-1 = most severe)
+ */
+const getActiveLegendIndex = (score, numLevels) => {
+    if (!SEVERITY_THRESHOLDS[numLevels]) {
+        return 0; // Default to first level if unknown
+    }
+
+    const thresholds = SEVERITY_THRESHOLDS[numLevels];
+    for (let i = 0; i < thresholds.length; i++) {
+        if (score >= thresholds[i]) {
+            return i;
+        }
+    }
+    return numLevels - 1; // Most severe level
 };
 
 // Default analysis text if not provided
@@ -74,6 +114,9 @@ export default function ConcernDetail({
 }) {
     const analysis = analysisText || DEFAULT_ANALYSIS;
     const legends = MARKER_LEGENDS[concern.key] || MARKER_LEGENDS.pore;
+
+    // Calculate active legend index based on score
+    const activeLegendIndex = getActiveLegendIndex(score || 0, legends.length);
     
     // Status landmark untuk transparency
     const getLandmarkStatusMessage = () => {
@@ -121,17 +164,24 @@ export default function ConcernDetail({
                             afterLabel={concern.label}
                         />
 
-                        {/* Legend overlay */}
+                        {/* Legend overlay with active/inactive states */}
                         <div className="image-legend">
-                            {legends.map((item, index) => (
-                                <div key={index} className="legend-item">
-                                    <span
-                                        className="legend-color"
-                                        style={{ backgroundColor: item.color }}
-                                    />
-                                    <span className="legend-label">{item.label}</span>
-                                </div>
-                            ))}
+                            {legends.map((item, index) => {
+                                const isActive = index === activeLegendIndex;
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`legend-item ${isActive ? 'legend-active' : 'legend-inactive'}`}
+                                    >
+                                        <span
+                                            className="legend-color"
+                                            style={{ backgroundColor: item.color }}
+                                        />
+                                        <span className="legend-label">{item.label}</span>
+                                        {isActive && <span className="legend-indicator">●</span>}
+                                    </div>
+                                );
+                            })}
                         </div>
                         
                         {/* Landmark status indicator (transparency) */}
