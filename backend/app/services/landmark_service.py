@@ -34,6 +34,75 @@ class LandmarkResult:
 
 
 # ============================================================================
+# UV TINT CONFIGURATION
+# Konfigurasi efek UV-like untuk tampilan analisis profesional
+# Terinspirasi dari alat analisis kecantikan UV seperti skin analyzers
+# ============================================================================
+
+UV_TINT_CONFIG = {
+    "color": (0, 160, 170),  # Cyan/teal base color
+    "opacity": 0.35,  # 35% opacity untuk mempertahankan detail wajah
+    "blend_mode": "overlay",  # Mode blending
+}
+
+
+def _apply_uv_tint(image: Image.Image, config: dict = None) -> Image.Image:
+    """
+    Terapkan efek UV tint pada gambar untuk tampilan analisis profesional.
+
+    Efek ini memberikan warna cyan/teal yang khas dari alat analisis
+    kecantikan UV, membuat gambar terlihat seperti di bawah lampu UV.
+
+    Args:
+        image: PIL Image dalam mode RGBA
+        config: Optional config dict dengan keys 'color', 'opacity', 'blend_mode'
+
+    Returns:
+        PIL Image dengan UV tint applied
+    """
+    if config is None:
+        config = UV_TINT_CONFIG
+
+    color = config.get("color", (0, 160, 170))
+    opacity = config.get("opacity", 0.35)
+
+    width, height = image.size
+
+    # Pastikan image dalam mode RGBA
+    if image.mode != "RGBA":
+        image = image.convert("RGBA")
+
+    # Buat tint layer dengan opacity
+    alpha_value = int(255 * opacity)
+    tint_layer = Image.new("RGBA", (width, height), (*color, alpha_value))
+
+    # Blend menggunakan alpha composite
+    # Untuk efek yang lebih natural, kita multiply warna
+    result = image.copy()
+    img_array = np.array(result, dtype=np.float32)
+    tint_array = np.array(tint_layer, dtype=np.float32)
+
+    # Blend formula: result = original * (1 - tint_alpha) + tint * tint_alpha
+    # Dengan sedikit boost pada channel cyan untuk efek UV
+    tint_alpha = tint_array[:, :, 3:4] / 255.0
+
+    # Apply tint dengan preserving luminance
+    for i in range(3):  # RGB channels
+        img_array[:, :, i] = (
+            img_array[:, :, i] * (1 - tint_alpha[:, :, 0] * 0.6)
+            + tint_array[:, :, i] * tint_alpha[:, :, 0] * 0.6
+        )
+
+    # Boost cyan/blue channels sedikit untuk efek UV
+    img_array[:, :, 1] = np.clip(img_array[:, :, 1] * 1.05, 0, 255)  # Green
+    img_array[:, :, 2] = np.clip(img_array[:, :, 2] * 1.08, 0, 255)  # Blue
+
+    result = Image.fromarray(img_array.astype(np.uint8), mode="RGBA")
+
+    return result
+
+
+# ============================================================================
 # FACIAL ZONE DEFINITIONS
 # MediaPipe Face Mesh landmark indices untuk setiap zona wajah
 # Reference: https://github.com/google/mediapipe/blob/master/mediapipe/modules/face_geometry/data/canonical_face_model_uv_visualization.png
@@ -344,81 +413,93 @@ VISUALIZATION_STYLE_MAPPING = {
 
 # Warna multi-level per concern - SINKRON dengan frontend MARKER_LEGENDS
 # Format: list of RGB tuples, index 0 = least severe, last index = most severe
+# UPDATED: Warna dioptimalkan untuk kontras dengan UV tint cyan/teal
+# Menggunakan pink/coral/magenta untuk concerns yang terlihat jelas di UV
 SEVERITY_COLOR_LEVELS = {
     # Oiliness/Sebum - 2 levels (Baumann Skin Typing)
     # Reference: Baumann LS. The Baumann Skin Typing System. Dermatol Clin. 2008
+    # UV-optimized: Pink/coral kontras dengan cyan background
     "oiliness": [
-        (255, 204, 0),  # #ffcc00 - Zona berminyak (score >= 50)
-        (255, 149, 0),  # #ff9500 - Sangat berminyak (score < 50)
+        (255, 180, 120),  # #ffb478 - Zona berminyak (score >= 50) - light coral
+        (255, 120, 150),  # #ff7896 - Sangat berminyak (score < 50) - pink/coral
     ],
     # Pore - 3 levels (Clinical pore assessment)
     # Reference: Flament F, et al. Skin Res Technol. 2015 - Facial pore assessment
+    # UV-optimized: Light cyan → orange → pink progression
     "pore": [
-        (0, 212, 255),  # #00d4ff - Pori tersumbat (mild, score >= 66)
-        (255, 149, 0),  # #ff9500 - Pori membesar (moderate, 33-65)
-        (255, 204, 0),  # #ffcc00 - Area berminyak (severe, < 33)
+        (120, 220, 255),  # #78dcff - Pori tersumbat (mild, score >= 66) - light cyan
+        (255, 180, 140),  # #ffb48c - Pori membesar (moderate, 33-65) - peach
+        (255, 100, 130),  # #ff6482 - Area berminyak (severe, < 33) - coral pink
     ],
     # Wrinkle - 3 levels (Modified Glogau Scale simplified)
     # Reference: Glogau RG. Aesthetic classification of photoaging. Dermatol Clin. 1991
+    # UV-optimized: Cyan → magenta → red-pink
     "wrinkle": [
-        (0, 212, 255),  # #00d4ff - Garis halus (Type I-II, score >= 66)
-        (168, 85, 247),  # #a855f7 - Kerutan sedang (Type II-III, 33-65)
-        (239, 68, 68),  # #ef4444 - Kerutan dalam (Type III-IV, < 33)
+        (100, 200, 255),  # #64c8ff - Garis halus (Type I-II, score >= 66) - sky blue
+        (200, 100, 220),  # #c864dc - Kerutan sedang (Type II-III, 33-65) - magenta
+        (255, 80, 120),  # #ff5078 - Kerutan dalam (Type III-IV, < 33) - hot pink
     ],
     # Acne - 3 levels (Global Acne Grading System simplified)
     # Reference: Doshi A, et al. J Am Acad Dermatol. 1997 - Global Acne Grading System
+    # UV-optimized: Pink spectrum untuk visibility tinggi
     "acne": [
-        (255, 204, 0),  # #ffcc00 - Bekas jerawat (mild, score >= 66)
-        (255, 149, 0),  # #ff9500 - Area meradang (moderate, 33-65)
-        (255, 59, 48),  # #ff3b30 - Jerawat aktif (severe, < 33)
+        (255, 200, 180),  # #ffc8b4 - Bekas jerawat (mild, score >= 66) - light peach
+        (255, 140, 160),  # #ff8ca0 - Area meradang (moderate, 33-65) - salmon pink
+        (255, 80, 100),  # #ff5064 - Jerawat aktif (severe, < 33) - coral red
     ],
     # Age spot/Flek - 4 levels (Pigmentation severity scale)
     # Reference: Nouveau S, et al. Br J Dermatol. 2019 - Facial hyperpigmentation
+    # UV-optimized: Cyan → peach → coral → deep pink
     "age_spot": [
-        (0, 212, 255),  # #00d4ff - Titik ringan (minimal, score >= 75)
-        (255, 149, 0),  # #ff9500 - Bintik-bintik (mild, 50-74)
-        (139, 90, 43),  # #8b5a2b - Melasma (moderate, 25-49)
-        (160, 82, 45),  # #a0522d - Bintik dewasa (severe, < 25)
+        (140, 220, 255),  # #8cdcff - Titik ringan (minimal, score >= 75) - light cyan
+        (255, 180, 150),  # #ffb496 - Bintik-bintik (mild, 50-74) - peach
+        (255, 130, 130),  # #ff8282 - Melasma (moderate, 25-49) - salmon
+        (255, 90, 120),  # #ff5a78 - Bintik dewasa (severe, < 25) - coral pink
     ],
     # Dark circle - 3 levels (Periorbital hyperpigmentation classification)
     # Reference: Huang YL, et al. Int J Dermatol. 2014 - Dark eye circle classification
+    # UV-optimized: Blue → purple → magenta
     "dark_circle": [
-        (92, 92, 255),  # #5c5cff - Vaskular (mild, score >= 66)
-        (139, 69, 19),  # #8b4513 - Pigmentasi (moderate, 33-65)
-        (128, 128, 128),  # #808080 - Struktural (severe, < 33)
+        (130, 150, 255),  # #8296ff - Vaskular (mild, score >= 66) - periwinkle
+        (180, 100, 200),  # #b464c8 - Pigmentasi (moderate, 33-65) - orchid
+        (220, 80, 160),  # #dc50a0 - Struktural (severe, < 33) - deep pink
     ],
     # Eye bag - sama dengan dark_circle
     "eye_bag": [
-        (92, 92, 255),  # #5c5cff - Ringan (score >= 66)
-        (139, 69, 19),  # #8b4513 - Sedang (33-65)
-        (128, 128, 128),  # #808080 - Berat (< 33)
+        (130, 150, 255),  # #8296ff - Ringan (score >= 66) - periwinkle
+        (180, 100, 200),  # #b464c8 - Sedang (33-65) - orchid
+        (220, 80, 160),  # #dc50a0 - Berat (< 33) - deep pink
     ],
     # Redness - 3 levels (Erythema severity scale)
     # Reference: Tan J, et al. J Drugs Dermatol. 2017 - Rosacea grading
+    # UV-optimized: Pink/red tones yang kontras dengan cyan
     "redness": [
-        (255, 107, 107),  # #ff6b6b - Kemerahan ringan (score >= 66)
-        (239, 68, 68),  # #ef4444 - Kemerahan sedang (33-65)
-        (220, 38, 38),  # #dc2626 - Kemerahan tinggi (< 33)
+        (255, 150, 170),  # #ff96aa - Kemerahan ringan (score >= 66) - light pink
+        (255, 100, 130),  # #ff6482 - Kemerahan sedang (33-65) - coral
+        (255, 60, 100),  # #ff3c64 - Kemerahan tinggi (< 33) - hot pink/red
     ],
     # Firmness - 3 levels (Skin laxity assessment)
     # Reference: Fabi S, Sundaram H. J Drugs Dermatol. 2014 - Skin quality assessment
+    # UV-optimized: Cyan → peach → pink
     "firmness": [
-        (0, 212, 255),  # #00d4ff - Elastisitas baik (score >= 66)
-        (245, 158, 11),  # #f59e0b - Penurunan ringan (33-65)
-        (239, 68, 68),  # #ef4444 - Perlu perhatian (< 33)
+        (100, 220, 240),  # #64dcf0 - Elastisitas baik (score >= 66) - aqua
+        (255, 180, 140),  # #ffb48c - Penurunan ringan (33-65) - peach
+        (255, 100, 140),  # #ff648c - Perlu perhatian (< 33) - coral pink
     ],
     # Radiance/Warna kulit - 3 levels
     # Reference: Jiang ZX, et al. Skin Res Technol. 2016 - Skin radiance measurement
+    # UV-optimized: Light tones → neutral → pink-gray
     "radiance": [
-        (255, 215, 0),  # #ffd700 - Area cerah (score >= 66)
-        (192, 192, 192),  # #c0c0c0 - Kusam (33-65)
-        (128, 128, 128),  # #808080 - Sangat kusam (< 33)
+        (255, 240, 180),  # #fff0b4 - Area cerah (score >= 66) - cream yellow
+        (200, 180, 200),  # #c8b4c8 - Kusam (33-65) - lavender gray
+        (180, 140, 180),  # #b48cb4 - Sangat kusam (< 33) - dusty pink
     ],
     # Texture - 3 levels
+    # UV-optimized: Cyan → purple → magenta
     "texture": [
-        (0, 212, 255),  # #00d4ff - Tekstur halus (score >= 66)
-        (175, 82, 222),  # #af52de - Tekstur kasar (33-65)
-        (139, 69, 19),  # #8b4513 - Tekstur sangat kasar (< 33)
+        (120, 200, 255),  # #78c8ff - Tekstur halus (score >= 66) - sky blue
+        (180, 120, 220),  # #b478dc - Tekstur kasar (33-65) - purple
+        (255, 100, 160),  # #ff64a0 - Tekstur sangat kasar (< 33) - hot pink
     ],
 }
 
@@ -431,18 +512,19 @@ SEVERITY_THRESHOLDS = {
 }
 
 # Fallback: single color untuk backward compatibility
+# UPDATED: Warna dioptimalkan untuk UV tint (pink/coral tones)
 CONCERN_COLORS = {
-    "oiliness": (255, 204, 0),  # Kuning/Gold
-    "acne": (255, 59, 48),  # Merah
-    "pore": (255, 149, 0),  # Orange
-    "wrinkle": (0, 212, 255),  # Cyan
-    "dark_circle": (94, 92, 230),  # Biru
-    "eye_bag": (88, 86, 214),  # Indigo
-    "age_spot": (162, 132, 94),  # Coklat
-    "redness": (255, 100, 100),  # Merah muda
-    "firmness": (0, 255, 200),  # Teal
-    "radiance": (255, 255, 100),  # Kuning terang
-    "texture": (175, 82, 222),  # Ungu
+    "oiliness": (255, 150, 135),  # Coral - kontras dengan cyan
+    "acne": (255, 110, 130),  # Pink coral
+    "pore": (255, 140, 165),  # Salmon pink
+    "wrinkle": (200, 100, 220),  # Magenta - kontras dengan cyan
+    "dark_circle": (180, 100, 200),  # Orchid
+    "eye_bag": (180, 100, 200),  # Orchid - sama dengan dark_circle
+    "age_spot": (255, 150, 150),  # Salmon - kontras dengan cyan
+    "redness": (255, 100, 130),  # Coral pink
+    "firmness": (255, 140, 165),  # Salmon pink
+    "radiance": (200, 180, 200),  # Lavender gray
+    "texture": (180, 120, 220),  # Purple
 }
 
 
@@ -705,16 +787,19 @@ class LandmarkService:
         original = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
         width, height = original.size
 
+        # Apply UV tint untuk efek analisis profesional (cyan/teal base)
+        original_with_uv = _apply_uv_tint(original)
+
         if landmark_result.status == LandmarkStatus.FAILED:
-            # Fallback: gunakan mask saja jika ada
+            # Fallback: gunakan mask saja jika ada (dengan UV tint)
             if mask_bytes:
                 status["fallback_used"] = True
                 status["visualization_source"] = "mask_only"
-                return self._apply_mask_only(original, mask_bytes, concern_key, score), status
+                return self._apply_mask_only(original_with_uv, mask_bytes, concern_key, score), status
             else:
-                # Return original dengan status failed
+                # Return UV-tinted image dengan status failed
                 output = io.BytesIO()
-                original.convert("RGB").save(output, format="JPEG", quality=95)
+                original_with_uv.convert("RGB").save(output, format="JPEG", quality=95)
                 return output.getvalue(), status
 
         # Success: buat visualisasi dengan landmark
@@ -776,8 +861,8 @@ class LandmarkService:
         if mask_bytes:
             overlay = self._add_intensity_dots(overlay, mask_bytes, landmarks, color)
 
-        # Composite overlay dengan original
-        result = Image.alpha_composite(original, overlay)
+        # Composite overlay dengan UV-tinted original
+        result = Image.alpha_composite(original_with_uv, overlay)
 
         # Convert ke JPEG
         output = io.BytesIO()
