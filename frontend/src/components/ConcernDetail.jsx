@@ -35,8 +35,11 @@ const MARKER_LEGENDS = {
         { color: '#dc50a0', label: 'Struktural' },         // Deep pink (severe)
     ],
     oiliness: [
-        { color: '#ffb478', label: 'Zona berminyak' },     // Light coral (mild)
-        { color: '#ff7896', label: 'Sangat berminyak' },   // Pink/coral (severe)
+        // Heatmap style: T-zone (warm colors) vs U-zone (cool colors)
+        // Research: T-zone sebum ~80.6 a.u., U-zone ~42.7 a.u. (Jung IS et al. 2019)
+        { color: '#ffc864', label: 'T-zone normal' },          // Yellow - score >= 66
+        { color: '#ff8c50', label: 'T-zone berminyak' },       // Orange - 33-65
+        { color: '#ff5050', label: 'T-zone sangat berminyak' }, // Red - score < 33
     ],
     redness: [
         { color: '#ff96aa', label: 'Kemerahan ringan' },   // Light pink (mild)
