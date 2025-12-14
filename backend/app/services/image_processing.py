@@ -34,14 +34,15 @@ def create_composite_visualization(
     overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
 
     # Priority masks to overlay (in order of visibility)
+    # UPDATED: Warna dioptimalkan untuk UV tint cyan/teal background
     mask_priorities = [
-        ("acne", (255, 59, 48, 180)),  # Red - high visibility
-        ("pore", (255, 149, 0, 150)),  # Orange
-        ("wrinkle", (255, 204, 0, 140)),  # Yellow
-        ("texture", (175, 82, 222, 130)),  # Purple
-        ("age_spot", (162, 132, 94, 150)),  # Brown
-        ("eye_bag", (88, 86, 214, 140)),  # Indigo
-        ("dark_circle", (94, 92, 230, 140)),  # Blue
+        ("acne", (255, 110, 130, 180)),  # Pink coral - high visibility
+        ("pore", (255, 140, 165, 150)),  # Salmon pink
+        ("wrinkle", (200, 100, 220, 140)),  # Magenta
+        ("texture", (180, 120, 220, 130)),  # Purple
+        ("age_spot", (255, 150, 150, 150)),  # Salmon
+        ("eye_bag", (180, 100, 200, 140)),  # Orchid
+        ("dark_circle", (180, 100, 200, 140)),  # Orchid
     ]
 
     # Apply each mask with appropriate color
@@ -130,19 +131,21 @@ def create_simple_composite(
 
 
 # Color configuration for each concern type
+# UPDATED: Warna dioptimalkan untuk UV tint cyan/teal background
+# Menggunakan pink/coral/magenta yang kontras dengan background cyan
 CONCERN_COLORS = {
-    "acne": (255, 59, 48, 180),  # Red
-    "pore": (255, 149, 0, 160),  # Orange
-    "wrinkle": (0, 212, 255, 150),  # Cyan
-    "texture": (175, 82, 222, 140),  # Purple
-    "age_spot": (255, 204, 0, 160),  # Yellow/Gold
-    "eye_bag": (88, 86, 214, 150),  # Indigo
-    "dark_circle": (94, 92, 230, 150),  # Blue
-    "oiliness": (255, 215, 0, 140),  # Gold
-    "redness": (255, 100, 100, 160),  # Light red
-    "firmness": (0, 255, 200, 130),  # Teal
-    "radiance": (255, 255, 100, 130),  # Light yellow
-    "moisture": (100, 200, 255, 130),  # Light blue
+    "acne": (255, 110, 130, 180),  # Pink coral - kontras dengan cyan
+    "pore": (255, 140, 165, 160),  # Salmon pink
+    "wrinkle": (200, 100, 220, 150),  # Magenta
+    "texture": (180, 120, 220, 140),  # Purple
+    "age_spot": (255, 150, 150, 160),  # Salmon
+    "eye_bag": (180, 100, 200, 150),  # Orchid
+    "dark_circle": (180, 100, 200, 150),  # Orchid
+    "oiliness": (255, 150, 135, 140),  # Coral
+    "redness": (255, 100, 130, 160),  # Coral pink
+    "firmness": (255, 140, 165, 130),  # Salmon pink
+    "radiance": (200, 180, 200, 130),  # Lavender gray
+    "moisture": (130, 150, 255, 130),  # Periwinkle
 }
 
 
