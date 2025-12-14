@@ -301,6 +301,31 @@ CONCERN_ZONE_MAPPING = {
     "texture": ["left_cheek", "right_cheek", "forehead_center"],
 }
 
+# ============================================================================
+# VISUALIZATION STYLE MAPPING
+# Menentukan tipe visualisasi per concern berdasarkan sifat kondisi kulit:
+# - "dots": Kondisi point-based (lesi diskrit) - acne, pore, age_spot
+# - "boundary": Kondisi area-based (zona/region) - oiliness, wrinkle, dll
+# ============================================================================
+
+VISUALIZATION_STYLE_MAPPING = {
+    # Point-based concerns → DOT visualization
+    # Kondisi yang manifest sebagai spot/titik individual
+    "acne": "dots",  # Papul, pustul, komedo adalah lesi diskrit
+    "pore": "dots",  # Pori adalah bukaan folikel individual
+    "age_spot": "dots",  # Bintik hiperpigmentasi adalah spot diskrit
+    # Area-based concerns → BOUNDARY visualization
+    # Kondisi yang mempengaruhi zona/region kulit
+    "oiliness": "boundary",  # T-zone oiliness adalah AREA
+    "wrinkle": "boundary",  # Kerutan adalah fitur LINEAR
+    "dark_circle": "boundary",  # Lingkaran hitam adalah AREA bawah mata
+    "eye_bag": "boundary",  # Kantung mata adalah region
+    "redness": "boundary",  # Kemerahan menyebar di area
+    "firmness": "boundary",  # Properti regional kulit
+    "radiance": "boundary",  # Properti regional kulit
+    "texture": "boundary",  # Properti regional kulit
+}
+
 
 # ============================================================================
 # SEVERITY-BASED COLOR SYSTEM
@@ -323,86 +348,86 @@ SEVERITY_COLOR_LEVELS = {
     # Oiliness/Sebum - 2 levels (Baumann Skin Typing)
     # Reference: Baumann LS. The Baumann Skin Typing System. Dermatol Clin. 2008
     "oiliness": [
-        (255, 204, 0),   # #ffcc00 - Zona berminyak (score >= 50)
-        (255, 149, 0),   # #ff9500 - Sangat berminyak (score < 50)
+        (255, 204, 0),  # #ffcc00 - Zona berminyak (score >= 50)
+        (255, 149, 0),  # #ff9500 - Sangat berminyak (score < 50)
     ],
     # Pore - 3 levels (Clinical pore assessment)
     # Reference: Flament F, et al. Skin Res Technol. 2015 - Facial pore assessment
     "pore": [
-        (0, 212, 255),   # #00d4ff - Pori tersumbat (mild, score >= 66)
-        (255, 149, 0),   # #ff9500 - Pori membesar (moderate, 33-65)
-        (255, 204, 0),   # #ffcc00 - Area berminyak (severe, < 33)
+        (0, 212, 255),  # #00d4ff - Pori tersumbat (mild, score >= 66)
+        (255, 149, 0),  # #ff9500 - Pori membesar (moderate, 33-65)
+        (255, 204, 0),  # #ffcc00 - Area berminyak (severe, < 33)
     ],
     # Wrinkle - 3 levels (Modified Glogau Scale simplified)
     # Reference: Glogau RG. Aesthetic classification of photoaging. Dermatol Clin. 1991
     "wrinkle": [
-        (0, 212, 255),   # #00d4ff - Garis halus (Type I-II, score >= 66)
+        (0, 212, 255),  # #00d4ff - Garis halus (Type I-II, score >= 66)
         (168, 85, 247),  # #a855f7 - Kerutan sedang (Type II-III, 33-65)
-        (239, 68, 68),   # #ef4444 - Kerutan dalam (Type III-IV, < 33)
+        (239, 68, 68),  # #ef4444 - Kerutan dalam (Type III-IV, < 33)
     ],
     # Acne - 3 levels (Global Acne Grading System simplified)
     # Reference: Doshi A, et al. J Am Acad Dermatol. 1997 - Global Acne Grading System
     "acne": [
-        (255, 204, 0),   # #ffcc00 - Bekas jerawat (mild, score >= 66)
-        (255, 149, 0),   # #ff9500 - Area meradang (moderate, 33-65)
-        (255, 59, 48),   # #ff3b30 - Jerawat aktif (severe, < 33)
+        (255, 204, 0),  # #ffcc00 - Bekas jerawat (mild, score >= 66)
+        (255, 149, 0),  # #ff9500 - Area meradang (moderate, 33-65)
+        (255, 59, 48),  # #ff3b30 - Jerawat aktif (severe, < 33)
     ],
     # Age spot/Flek - 4 levels (Pigmentation severity scale)
     # Reference: Nouveau S, et al. Br J Dermatol. 2019 - Facial hyperpigmentation
     "age_spot": [
-        (0, 212, 255),   # #00d4ff - Titik ringan (minimal, score >= 75)
-        (255, 149, 0),   # #ff9500 - Bintik-bintik (mild, 50-74)
-        (139, 90, 43),   # #8b5a2b - Melasma (moderate, 25-49)
-        (160, 82, 45),   # #a0522d - Bintik dewasa (severe, < 25)
+        (0, 212, 255),  # #00d4ff - Titik ringan (minimal, score >= 75)
+        (255, 149, 0),  # #ff9500 - Bintik-bintik (mild, 50-74)
+        (139, 90, 43),  # #8b5a2b - Melasma (moderate, 25-49)
+        (160, 82, 45),  # #a0522d - Bintik dewasa (severe, < 25)
     ],
     # Dark circle - 3 levels (Periorbital hyperpigmentation classification)
     # Reference: Huang YL, et al. Int J Dermatol. 2014 - Dark eye circle classification
     "dark_circle": [
-        (92, 92, 255),   # #5c5cff - Vaskular (mild, score >= 66)
-        (139, 69, 19),   # #8b4513 - Pigmentasi (moderate, 33-65)
-        (128, 128, 128), # #808080 - Struktural (severe, < 33)
+        (92, 92, 255),  # #5c5cff - Vaskular (mild, score >= 66)
+        (139, 69, 19),  # #8b4513 - Pigmentasi (moderate, 33-65)
+        (128, 128, 128),  # #808080 - Struktural (severe, < 33)
     ],
     # Eye bag - sama dengan dark_circle
     "eye_bag": [
-        (92, 92, 255),   # #5c5cff - Ringan (score >= 66)
-        (139, 69, 19),   # #8b4513 - Sedang (33-65)
-        (128, 128, 128), # #808080 - Berat (< 33)
+        (92, 92, 255),  # #5c5cff - Ringan (score >= 66)
+        (139, 69, 19),  # #8b4513 - Sedang (33-65)
+        (128, 128, 128),  # #808080 - Berat (< 33)
     ],
     # Redness - 3 levels (Erythema severity scale)
     # Reference: Tan J, et al. J Drugs Dermatol. 2017 - Rosacea grading
     "redness": [
-        (255, 107, 107), # #ff6b6b - Kemerahan ringan (score >= 66)
-        (239, 68, 68),   # #ef4444 - Kemerahan sedang (33-65)
-        (220, 38, 38),   # #dc2626 - Kemerahan tinggi (< 33)
+        (255, 107, 107),  # #ff6b6b - Kemerahan ringan (score >= 66)
+        (239, 68, 68),  # #ef4444 - Kemerahan sedang (33-65)
+        (220, 38, 38),  # #dc2626 - Kemerahan tinggi (< 33)
     ],
     # Firmness - 3 levels (Skin laxity assessment)
     # Reference: Fabi S, Sundaram H. J Drugs Dermatol. 2014 - Skin quality assessment
     "firmness": [
-        (0, 212, 255),   # #00d4ff - Elastisitas baik (score >= 66)
+        (0, 212, 255),  # #00d4ff - Elastisitas baik (score >= 66)
         (245, 158, 11),  # #f59e0b - Penurunan ringan (33-65)
-        (239, 68, 68),   # #ef4444 - Perlu perhatian (< 33)
+        (239, 68, 68),  # #ef4444 - Perlu perhatian (< 33)
     ],
     # Radiance/Warna kulit - 3 levels
     # Reference: Jiang ZX, et al. Skin Res Technol. 2016 - Skin radiance measurement
     "radiance": [
-        (255, 215, 0),   # #ffd700 - Area cerah (score >= 66)
-        (192, 192, 192), # #c0c0c0 - Kusam (33-65)
-        (128, 128, 128), # #808080 - Sangat kusam (< 33)
+        (255, 215, 0),  # #ffd700 - Area cerah (score >= 66)
+        (192, 192, 192),  # #c0c0c0 - Kusam (33-65)
+        (128, 128, 128),  # #808080 - Sangat kusam (< 33)
     ],
     # Texture - 3 levels
     "texture": [
-        (0, 212, 255),   # #00d4ff - Tekstur halus (score >= 66)
+        (0, 212, 255),  # #00d4ff - Tekstur halus (score >= 66)
         (175, 82, 222),  # #af52de - Tekstur kasar (33-65)
-        (139, 69, 19),   # #8b4513 - Tekstur sangat kasar (< 33)
+        (139, 69, 19),  # #8b4513 - Tekstur sangat kasar (< 33)
     ],
 }
 
 # Threshold untuk menentukan severity level berdasarkan jumlah level
 # Format: list of thresholds, len = num_levels - 1
 SEVERITY_THRESHOLDS = {
-    2: [50],           # 2 levels: >= 50 = level 0, < 50 = level 1
-    3: [66, 33],       # 3 levels: >= 66 = 0, 33-65 = 1, < 33 = 2
-    4: [75, 50, 25],   # 4 levels: >= 75 = 0, 50-74 = 1, 25-49 = 2, < 25 = 3
+    2: [50],  # 2 levels: >= 50 = level 0, < 50 = level 1
+    3: [66, 33],  # 3 levels: >= 66 = 0, 33-65 = 1, < 33 = 2
+    4: [75, 50, 25],  # 4 levels: >= 75 = 0, 50-74 = 1, 25-49 = 2, < 25 = 3
 }
 
 # Fallback: single color untuk backward compatibility
@@ -468,6 +493,92 @@ def get_color_for_severity(concern_key: str, score: float) -> tuple:
     severity_level = get_severity_level(score, num_levels)
 
     return color_levels[severity_level]
+
+
+def calculate_dot_radius(width: int, height: int, severity_level: int, num_levels: int) -> int:
+    """
+    Hitung radius dot berdasarkan ukuran gambar dan severity level.
+
+    Args:
+        width: Lebar gambar dalam pixel
+        height: Tinggi gambar dalam pixel
+        severity_level: Level severity (0 = mild, higher = more severe)
+        num_levels: Total jumlah level untuk concern ini
+
+    Returns:
+        Radius dot dalam pixel
+
+    Formula:
+        base_radius = 0.5% dari dimensi terkecil gambar (min 3px)
+        severity_multiplier = 1.0 (mild) hingga 2.0 (severe)
+    """
+    # Base radius: 0.5% dari dimensi terkecil, minimum 3px
+    base_radius = max(3, int(min(width, height) * 0.005))
+
+    # Severity multiplier: mild=1.0, moderate=1.5, severe=2.0
+    if num_levels <= 1:
+        multiplier = 1.0
+    else:
+        # Linear interpolation dari 1.0 ke 2.0 berdasarkan severity
+        multiplier = 1.0 + (severity_level / (num_levels - 1)) * 1.0
+
+    return int(base_radius * multiplier)
+
+
+def get_dot_alpha(severity_level: int, num_levels: int) -> int:
+    """
+    Hitung alpha (opacity) dot berdasarkan severity level.
+
+    Args:
+        severity_level: Level severity (0 = mild, higher = more severe)
+        num_levels: Total jumlah level untuk concern ini
+
+    Returns:
+        Alpha value (0-255)
+
+    Mapping:
+        - Mild (level 0): alpha 180
+        - Moderate: alpha 210
+        - Severe (max level): alpha 255
+    """
+    if num_levels <= 1:
+        return 220
+
+    # Linear interpolation dari 180 ke 255
+    alpha_range = 255 - 180  # 75
+    alpha = 180 + int((severity_level / (num_levels - 1)) * alpha_range)
+    return min(255, alpha)
+
+
+def draw_severity_dots(
+    draw: ImageDraw.ImageDraw,
+    points: list[tuple[int, int]],
+    color: tuple[int, int, int],
+    width: int,
+    height: int,
+    severity_level: int,
+    num_levels: int,
+) -> None:
+    """
+    Gambar dots pada titik-titik landmark dengan ukuran berdasarkan severity.
+
+    Args:
+        draw: PIL ImageDraw object
+        points: List of (x, y) koordinat landmark
+        color: RGB tuple warna dot
+        width: Lebar gambar
+        height: Tinggi gambar
+        severity_level: Level severity untuk sizing
+        num_levels: Total jumlah level
+    """
+    radius = calculate_dot_radius(width, height, severity_level, num_levels)
+    alpha = get_dot_alpha(severity_level, num_levels)
+
+    for x, y in points:
+        draw.ellipse(
+            [(x - radius, y - radius), (x + radius, y + radius)],
+            fill=(*color, alpha),
+        )
 
 
 class LandmarkService:
@@ -633,12 +744,28 @@ class LandmarkService:
             if len(points) < 3:
                 continue
 
-            if style == "canny":
-                # Canny style: outline dengan dots
-                # Draw outline
+            # Tentukan visualization style berdasarkan concern type
+            viz_style = VISUALIZATION_STYLE_MAPPING.get(concern_key, "boundary")
+            num_levels = len(SEVERITY_COLOR_LEVELS.get(concern_key, [None]))
+            current_severity = severity_level if severity_level is not None else 0
+
+            if viz_style == "dots":
+                # DOT visualization untuk point-based concerns (acne, pore, age_spot)
+                # Hanya gambar dots, tanpa lines
+                draw_severity_dots(
+                    draw=draw,
+                    points=points,
+                    color=color,
+                    width=width,
+                    height=height,
+                    severity_level=current_severity,
+                    num_levels=num_levels,
+                )
+            elif style == "canny":
+                # BOUNDARY visualization dengan canny style: outline dengan dots
                 draw.line(points + [points[0]], fill=(*color, 200), width=2)
 
-                # Draw dots pada setiap landmark
+                # Draw small dots pada setiap landmark
                 for x, y in points:
                     draw.ellipse([(x - 2, y - 2), (x + 2, y + 2)], fill=(*color, 255))
             else:
@@ -719,9 +846,12 @@ class LandmarkService:
     def _add_intensity_dots(
         self, overlay: Image.Image, mask_bytes: bytes, landmarks: np.ndarray, color: tuple
     ) -> Image.Image:
-        """Tambahkan intensity dots berdasarkan mask"""
+        """Tambahkan intensity dots berdasarkan mask dengan dynamic sizing."""
         draw = ImageDraw.Draw(overlay)
         width, height = overlay.size
+
+        # Base radius berdasarkan ukuran gambar (konsisten dengan draw_severity_dots)
+        base_radius = max(2, int(min(width, height) * 0.004))
 
         try:
             # Load mask
@@ -737,8 +867,9 @@ class LandmarkService:
                 if 0 <= x < width and 0 <= y < height:
                     intensity = mask_array[y, x]
                     if intensity > 30:  # Threshold
-                        # Ukuran dot berdasarkan intensity
-                        radius = max(2, int(intensity / 50))
+                        # Ukuran dot berdasarkan intensity (scaled by base_radius)
+                        intensity_multiplier = 1.0 + (intensity / 255.0)
+                        radius = max(base_radius, int(base_radius * intensity_multiplier))
                         alpha = min(255, intensity + 100)
                         draw.ellipse(
                             [(x - radius, y - radius), (x + radius, y + radius)],
