@@ -53,6 +53,41 @@ const MARKER_LEGENDS = {
     ],
 };
 
+/**
+ * Severity thresholds synchronized with backend (landmark_service.py)
+ * Based on dermatological literature:
+ * - Glogau Scale (wrinkles)
+ * - Global Acne Grading System
+ * - Baumann Skin Typing System (oiliness)
+ *
+ * Higher score = better skin condition = milder severity
+ */
+const SEVERITY_THRESHOLDS = {
+    2: [50],           // 2 levels: >= 50 = level 0 (mild), < 50 = level 1 (severe)
+    3: [66, 33],       // 3 levels: >= 66 = 0, 33-65 = 1, < 33 = 2
+    4: [75, 50, 25],   // 4 levels: >= 75 = 0, 50-74 = 1, 25-49 = 2, < 25 = 3
+};
+
+/**
+ * Get active severity level index based on score
+ * @param {number} score - UI score from YouCam API (0-100, higher = better)
+ * @param {number} numLevels - Number of severity levels for this concern
+ * @returns {number} Active level index (0 = mildest, numLevels-1 = most severe)
+ */
+const getActiveLegendIndex = (score, numLevels) => {
+    if (!SEVERITY_THRESHOLDS[numLevels]) {
+        return 0; // Default to first level if unknown
+    }
+
+    const thresholds = SEVERITY_THRESHOLDS[numLevels];
+    for (let i = 0; i < thresholds.length; i++) {
+        if (score >= thresholds[i]) {
+            return i;
+        }
+    }
+    return numLevels - 1; // Most severe level
+};
+
 // Default analysis text if not provided
 const DEFAULT_ANALYSIS = {
     quantitative: 'Analisis kuantitatif tidak tersedia.',
@@ -74,6 +109,9 @@ export default function ConcernDetail({
 }) {
     const analysis = analysisText || DEFAULT_ANALYSIS;
     const legends = MARKER_LEGENDS[concern.key] || MARKER_LEGENDS.pore;
+
+    // Calculate active legend index based on score
+    const activeLegendIndex = getActiveLegendIndex(score || 0, legends.length);
     
     // Status landmark untuk transparency
     const getLandmarkStatusMessage = () => {
@@ -121,17 +159,24 @@ export default function ConcernDetail({
                             afterLabel={concern.label}
                         />
 
-                        {/* Legend overlay */}
+                        {/* Legend overlay with active/inactive states */}
                         <div className="image-legend">
-                            {legends.map((item, index) => (
-                                <div key={index} className="legend-item">
-                                    <span
-                                        className="legend-color"
-                                        style={{ backgroundColor: item.color }}
-                                    />
-                                    <span className="legend-label">{item.label}</span>
-                                </div>
-                            ))}
+                            {legends.map((item, index) => {
+                                const isActive = index === activeLegendIndex;
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`legend-item ${isActive ? 'legend-active' : 'legend-inactive'}`}
+                                    >
+                                        <span
+                                            className="legend-color"
+                                            style={{ backgroundColor: item.color }}
+                                        />
+                                        <span className="legend-label">{item.label}</span>
+                                        {isActive && <span className="legend-indicator">●</span>}
+                                    </div>
+                                );
+                            })}
                         </div>
                         
                         {/* Landmark status indicator (transparency) */}

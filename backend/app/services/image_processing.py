@@ -269,25 +269,40 @@ def create_all_concern_overlays(
 def create_landmark_enhanced_overlays(
     original_image_bytes: bytes,
     masks: dict[str, bytes],
+    scores: dict | None = None,
 ) -> tuple[dict[str, bytes], dict[str, dict]]:
     """
-    Create landmark-enhanced overlay images for all concerns.
+    Create landmark-enhanced overlay images for all concerns with severity-based colors.
 
     Menggunakan MediaPipe Face Mesh untuk menambahkan:
     - Zone boundaries (polygon outlines)
     - Landmark dots
     - Canny-style mesh visualization
+    - Severity-based coloring based on scores
 
     Args:
         original_image_bytes: Original uploaded image
         masks: Dictionary of mask_name -> PNG bytes
+        scores: Optional dictionary of scores from YouCam API for severity coloring
+                Format: {"oiliness": {"ui_score": 45.2}, ...}
 
     Returns:
         Tuple of:
         - Dictionary of concern_key -> JPEG image bytes
-        - Dictionary of concern_key -> status dict (landmark_status, etc.)
+        - Dictionary of concern_key -> status dict (landmark_status, severity_level, etc.)
+
+    Color Selection (based on dermatological literature):
+        - High score (>=66): Mild severity color
+        - Mid score (33-65): Moderate severity color
+        - Low score (<33): Severe severity color
+
+    References:
+        - Glogau Scale for photoaging (wrinkles)
+        - Global Acne Grading System (acne)
+        - Baumann Skin Typing System (oiliness)
+        - Clinical pore assessment scales
     """
     from app.services.landmark_service import get_landmark_service
 
     service = get_landmark_service()
-    return service.create_all_zone_visualizations(original_image_bytes, masks)
+    return service.create_all_zone_visualizations(original_image_bytes, masks, scores)

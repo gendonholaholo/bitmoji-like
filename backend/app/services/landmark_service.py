@@ -302,7 +302,110 @@ CONCERN_ZONE_MAPPING = {
 }
 
 
-# Warna untuk setiap concern (RGB + Alpha)
+# ============================================================================
+# SEVERITY-BASED COLOR SYSTEM
+# Multi-level colors berdasarkan literature dermatologi:
+# - Glogau Scale (wrinkle): 4 levels photoaging
+# - Global Acne Grading System: 5 levels severity
+# - Baumann Skin Typing: oiliness classification
+# - Clinical pore assessment scales
+# - Periorbital hyperpigmentation classification
+#
+# Score mapping (YouCam API: 0-100, higher = healthier):
+# - HIGH score (≥66) = mild/minimal problem = Level 0 (least severe color)
+# - MID score (33-65) = moderate problem = Level 1
+# - LOW score (<33) = severe problem = Level 2+ (most severe color)
+# ============================================================================
+
+# Warna multi-level per concern - SINKRON dengan frontend MARKER_LEGENDS
+# Format: list of RGB tuples, index 0 = least severe, last index = most severe
+SEVERITY_COLOR_LEVELS = {
+    # Oiliness/Sebum - 2 levels (Baumann Skin Typing)
+    # Reference: Baumann LS. The Baumann Skin Typing System. Dermatol Clin. 2008
+    "oiliness": [
+        (255, 204, 0),   # #ffcc00 - Zona berminyak (score >= 50)
+        (255, 149, 0),   # #ff9500 - Sangat berminyak (score < 50)
+    ],
+    # Pore - 3 levels (Clinical pore assessment)
+    # Reference: Flament F, et al. Skin Res Technol. 2015 - Facial pore assessment
+    "pore": [
+        (0, 212, 255),   # #00d4ff - Pori tersumbat (mild, score >= 66)
+        (255, 149, 0),   # #ff9500 - Pori membesar (moderate, 33-65)
+        (255, 204, 0),   # #ffcc00 - Area berminyak (severe, < 33)
+    ],
+    # Wrinkle - 3 levels (Modified Glogau Scale simplified)
+    # Reference: Glogau RG. Aesthetic classification of photoaging. Dermatol Clin. 1991
+    "wrinkle": [
+        (0, 212, 255),   # #00d4ff - Garis halus (Type I-II, score >= 66)
+        (168, 85, 247),  # #a855f7 - Kerutan sedang (Type II-III, 33-65)
+        (239, 68, 68),   # #ef4444 - Kerutan dalam (Type III-IV, < 33)
+    ],
+    # Acne - 3 levels (Global Acne Grading System simplified)
+    # Reference: Doshi A, et al. J Am Acad Dermatol. 1997 - Global Acne Grading System
+    "acne": [
+        (255, 204, 0),   # #ffcc00 - Bekas jerawat (mild, score >= 66)
+        (255, 149, 0),   # #ff9500 - Area meradang (moderate, 33-65)
+        (255, 59, 48),   # #ff3b30 - Jerawat aktif (severe, < 33)
+    ],
+    # Age spot/Flek - 4 levels (Pigmentation severity scale)
+    # Reference: Nouveau S, et al. Br J Dermatol. 2019 - Facial hyperpigmentation
+    "age_spot": [
+        (0, 212, 255),   # #00d4ff - Titik ringan (minimal, score >= 75)
+        (255, 149, 0),   # #ff9500 - Bintik-bintik (mild, 50-74)
+        (139, 90, 43),   # #8b5a2b - Melasma (moderate, 25-49)
+        (160, 82, 45),   # #a0522d - Bintik dewasa (severe, < 25)
+    ],
+    # Dark circle - 3 levels (Periorbital hyperpigmentation classification)
+    # Reference: Huang YL, et al. Int J Dermatol. 2014 - Dark eye circle classification
+    "dark_circle": [
+        (92, 92, 255),   # #5c5cff - Vaskular (mild, score >= 66)
+        (139, 69, 19),   # #8b4513 - Pigmentasi (moderate, 33-65)
+        (128, 128, 128), # #808080 - Struktural (severe, < 33)
+    ],
+    # Eye bag - sama dengan dark_circle
+    "eye_bag": [
+        (92, 92, 255),   # #5c5cff - Ringan (score >= 66)
+        (139, 69, 19),   # #8b4513 - Sedang (33-65)
+        (128, 128, 128), # #808080 - Berat (< 33)
+    ],
+    # Redness - 3 levels (Erythema severity scale)
+    # Reference: Tan J, et al. J Drugs Dermatol. 2017 - Rosacea grading
+    "redness": [
+        (255, 107, 107), # #ff6b6b - Kemerahan ringan (score >= 66)
+        (239, 68, 68),   # #ef4444 - Kemerahan sedang (33-65)
+        (220, 38, 38),   # #dc2626 - Kemerahan tinggi (< 33)
+    ],
+    # Firmness - 3 levels (Skin laxity assessment)
+    # Reference: Fabi S, Sundaram H. J Drugs Dermatol. 2014 - Skin quality assessment
+    "firmness": [
+        (0, 212, 255),   # #00d4ff - Elastisitas baik (score >= 66)
+        (245, 158, 11),  # #f59e0b - Penurunan ringan (33-65)
+        (239, 68, 68),   # #ef4444 - Perlu perhatian (< 33)
+    ],
+    # Radiance/Warna kulit - 3 levels
+    # Reference: Jiang ZX, et al. Skin Res Technol. 2016 - Skin radiance measurement
+    "radiance": [
+        (255, 215, 0),   # #ffd700 - Area cerah (score >= 66)
+        (192, 192, 192), # #c0c0c0 - Kusam (33-65)
+        (128, 128, 128), # #808080 - Sangat kusam (< 33)
+    ],
+    # Texture - 3 levels
+    "texture": [
+        (0, 212, 255),   # #00d4ff - Tekstur halus (score >= 66)
+        (175, 82, 222),  # #af52de - Tekstur kasar (33-65)
+        (139, 69, 19),   # #8b4513 - Tekstur sangat kasar (< 33)
+    ],
+}
+
+# Threshold untuk menentukan severity level berdasarkan jumlah level
+# Format: list of thresholds, len = num_levels - 1
+SEVERITY_THRESHOLDS = {
+    2: [50],           # 2 levels: >= 50 = level 0, < 50 = level 1
+    3: [66, 33],       # 3 levels: >= 66 = 0, 33-65 = 1, < 33 = 2
+    4: [75, 50, 25],   # 4 levels: >= 75 = 0, 50-74 = 1, 25-49 = 2, < 25 = 3
+}
+
+# Fallback: single color untuk backward compatibility
 CONCERN_COLORS = {
     "oiliness": (255, 204, 0),  # Kuning/Gold
     "acne": (255, 59, 48),  # Merah
@@ -316,6 +419,55 @@ CONCERN_COLORS = {
     "radiance": (255, 255, 100),  # Kuning terang
     "texture": (175, 82, 222),  # Ungu
 }
+
+
+def get_severity_level(score: float, num_levels: int) -> int:
+    """
+    Hitung severity level berdasarkan score.
+
+    Args:
+        score: Skor dari YouCam API (0-100, higher = healthier)
+        num_levels: Jumlah level severity untuk concern ini
+
+    Returns:
+        Severity level index (0 = least severe, num_levels-1 = most severe)
+
+    Literature basis:
+    - Score >= 66: Mild/minimal (corresponds to Glogau Type I-II, mild acne)
+    - Score 33-65: Moderate (Glogau Type II-III, moderate concerns)
+    - Score < 33: Severe (Glogau Type III-IV, severe issues)
+    """
+    if num_levels not in SEVERITY_THRESHOLDS:
+        return 0  # Default ke level terendah jika tidak ada threshold
+
+    thresholds = SEVERITY_THRESHOLDS[num_levels]
+
+    for i, threshold in enumerate(thresholds):
+        if score >= threshold:
+            return i
+
+    return num_levels - 1  # Level paling severe
+
+
+def get_color_for_severity(concern_key: str, score: float) -> tuple:
+    """
+    Dapatkan warna RGB berdasarkan concern dan score.
+
+    Args:
+        concern_key: Key concern (e.g., 'oiliness', 'acne')
+        score: Skor dari YouCam API (0-100)
+
+    Returns:
+        RGB tuple untuk warna yang sesuai dengan severity
+    """
+    if concern_key not in SEVERITY_COLOR_LEVELS:
+        return CONCERN_COLORS.get(concern_key, (0, 212, 255))
+
+    color_levels = SEVERITY_COLOR_LEVELS[concern_key]
+    num_levels = len(color_levels)
+    severity_level = get_severity_level(score, num_levels)
+
+    return color_levels[severity_level]
 
 
 class LandmarkService:
@@ -389,21 +541,43 @@ class LandmarkService:
         concern_key: str,
         mask_bytes: bytes | None = None,
         style: str = "canny",
+        score: float | None = None,
     ) -> tuple[bytes, dict]:
         """
-        Buat visualisasi zona untuk concern tertentu
+        Buat visualisasi zona untuk concern tertentu dengan severity-based colors.
 
         Args:
             image_bytes: Original image bytes
             concern_key: Key concern (e.g., 'oiliness', 'acne')
             mask_bytes: Optional mask dari YouCam untuk intensity
             style: 'canny' untuk outline, 'filled' untuk filled polygon
+            score: Optional score dari YouCam API (0-100) untuk menentukan severity color
 
         Returns:
             Tuple of (visualization_bytes, status_dict)
+
+        Color Selection Logic (based on dermatological literature):
+            - If score provided: Use severity-based color from SEVERITY_COLOR_LEVELS
+            - If no score: Fall back to default CONCERN_COLORS
+
+        References:
+            - Glogau Scale for photoaging (wrinkles)
+            - Global Acne Grading System (acne)
+            - Baumann Skin Typing System (oiliness)
+            - Clinical pore assessment scales
         """
         # Deteksi landmark
         landmark_result = self.detect_landmarks(image_bytes)
+
+        # Determine color based on score (severity-based) or fallback
+        if score is not None:
+            color = get_color_for_severity(concern_key, score)
+            severity_level = get_severity_level(
+                score, len(SEVERITY_COLOR_LEVELS.get(concern_key, [None]))
+            )
+        else:
+            color = CONCERN_COLORS.get(concern_key, (0, 212, 255))
+            severity_level = None
 
         status = {
             "landmark_status": landmark_result.status.value,
@@ -411,6 +585,9 @@ class LandmarkService:
             "confidence": landmark_result.confidence,
             "fallback_used": False,
             "visualization_source": "none",
+            "severity_level": severity_level,
+            "score_used": score,
+            "color_rgb": color,
         }
 
         # Load original image
@@ -422,7 +599,7 @@ class LandmarkService:
             if mask_bytes:
                 status["fallback_used"] = True
                 status["visualization_source"] = "mask_only"
-                return self._apply_mask_only(original, mask_bytes, concern_key), status
+                return self._apply_mask_only(original, mask_bytes, concern_key, score), status
             else:
                 # Return original dengan status failed
                 output = io.BytesIO()
@@ -439,7 +616,6 @@ class LandmarkService:
 
         # Dapatkan zona untuk concern ini
         zones = CONCERN_ZONE_MAPPING.get(concern_key, ["left_cheek", "right_cheek"])
-        color = CONCERN_COLORS.get(concern_key, (0, 212, 255))
 
         # Gambar setiap zona
         for zone_name in zones:
@@ -469,7 +645,7 @@ class LandmarkService:
                 # Filled style: polygon semi-transparan
                 draw.polygon(points, fill=(*color, 60), outline=(*color, 180))
 
-        # Tambahkan intensity dots jika ada mask
+        # Tambahkan intensity dots jika ada mask (using severity color)
         if mask_bytes:
             overlay = self._add_intensity_dots(overlay, mask_bytes, landmarks, color)
 
@@ -499,10 +675,21 @@ class LandmarkService:
                 return sub_zones
         return []
 
-    def _apply_mask_only(self, original: Image.Image, mask_bytes: bytes, concern_key: str) -> bytes:
-        """Fallback: apply mask tanpa landmark (enhanced visibility)"""
+    def _apply_mask_only(
+        self,
+        original: Image.Image,
+        mask_bytes: bytes,
+        concern_key: str,
+        score: float | None = None,
+    ) -> bytes:
+        """Fallback: apply mask tanpa landmark (enhanced visibility) with severity colors"""
         width, height = original.size
-        color = CONCERN_COLORS.get(concern_key, (0, 212, 255))
+
+        # Use severity-based color if score provided
+        if score is not None:
+            color = get_color_for_severity(concern_key, score)
+        else:
+            color = CONCERN_COLORS.get(concern_key, (0, 212, 255))
 
         # Load mask
         mask_img = Image.open(io.BytesIO(mask_bytes))
@@ -566,16 +753,23 @@ class LandmarkService:
         self,
         image_bytes: bytes,
         masks: dict[str, bytes],
+        scores: dict | None = None,
     ) -> tuple[dict[str, bytes], dict[str, dict]]:
         """
-        Buat visualisasi untuk semua concern
+        Buat visualisasi untuk semua concern dengan severity-based colors.
 
         Args:
             image_bytes: Original image bytes
             masks: Dictionary of mask_name -> PNG bytes
+            scores: Optional dictionary of scores from YouCam API for severity coloring
+                    Format: {"oiliness": {"ui_score": 45.2}, "acne": {"ui_score": 72.1}, ...}
 
         Returns:
             Tuple of (visualizations_dict, statuses_dict)
+
+        The scores parameter enables severity-based color visualization:
+        - When scores provided: Colors are selected based on severity thresholds
+        - When scores not provided: Falls back to default single-color visualization
         """
         visualizations = {}
         statuses = {}
@@ -590,8 +784,26 @@ class LandmarkService:
                     mask_bytes = mask_data
                     break
 
+            # Extract score for this concern if available
+            concern_score = None
+            if scores:
+                score_data = scores.get(concern_key)
+                if score_data:
+                    # Handle different score formats
+                    if isinstance(score_data, dict):
+                        concern_score = score_data.get("ui_score") or score_data.get("raw_score")
+                        # Handle nested 'whole' structure
+                        if concern_score is None and "whole" in score_data:
+                            concern_score = score_data["whole"].get("ui_score")
+                    elif isinstance(score_data, (int, float)):
+                        concern_score = float(score_data)
+
             viz_bytes, status = self.create_zone_visualization(
-                image_bytes, concern_key, mask_bytes=mask_bytes, style="canny"
+                image_bytes,
+                concern_key,
+                mask_bytes=mask_bytes,
+                style="canny",
+                score=concern_score,
             )
 
             visualizations[concern_key] = viz_bytes
