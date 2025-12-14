@@ -236,12 +236,13 @@ class YouCamService:
             composite_b64 = base64.b64encode(image_content).decode("utf-8")
 
         # Step 5b: Generate per-concern overlay images with landmark enhancement
+        # Now includes severity-based coloring using scores
         concern_overlays_b64 = {}
         landmark_statuses = {}
         try:
-            # Gunakan landmark-enhanced overlays (MediaPipe + YouCam mask)
+            # Gunakan landmark-enhanced overlays (MediaPipe + YouCam mask + severity colors)
             concern_overlays, landmark_statuses = create_landmark_enhanced_overlays(
-                image_content, masks
+                image_content, masks, scores
             )
             concern_overlays_b64 = {
                 name: base64.b64encode(content).decode("utf-8")
@@ -344,12 +345,13 @@ class YouCamService:
             composite_b64 = base64.b64encode(image_content).decode("utf-8")
 
         # Step 5b: Generate per-concern overlays with MediaPipe landmark enhancement
+        # Now includes severity-based coloring using scores
         concern_overlays_b64 = {}
         landmark_statuses = {}
         try:
-            print("[BYPASS MODE] Attempting MediaPipe landmark detection...")
+            print("[BYPASS MODE] Attempting MediaPipe landmark detection with severity colors...")
             concern_overlays, landmark_statuses = create_landmark_enhanced_overlays(
-                image_content, masks
+                image_content, masks, scores
             )
             concern_overlays_b64 = {
                 name: base64.b64encode(content).decode("utf-8")
